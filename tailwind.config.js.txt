@@ -1,0 +1,29 @@
+export default {
+    content: [
+        './resources/views/**/*.blade.php',
+        './resources/js/**/*.js',
+    ],
+    theme: {
+        extend: {
+            colors: {
+                hostel: {
+                    blue:         '#B8D8E8',
+                    'blue-dark':  '#7BAFC4',
+                    'blue-text':  '#2C6E8A',
+                    green:        '#B8D9C8',
+                    'green-dark': '#7AB89A',
+                    'green-text': '#2A6B4F',
+                    beige:        '#F5F0E8',
+                    'beige-dark': '#E8E0D0',
+                    cream:        '#FDFAF5',
+                    'text-main':  '#3D3530',
+                    'text-muted': '#7A7068',
+                },
+            },
+            fontFamily: {
+                sans: ['Inter', 'sans-serif'],
+            },
+        },
+    },
+    plugins: [],
+};
