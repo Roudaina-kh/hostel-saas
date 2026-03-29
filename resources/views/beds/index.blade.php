@@ -14,7 +14,8 @@
     {{-- Formulaire d'ajout rapide --}}
     <div class="lg:col-span-1 glass-table p-8">
         <h2 class="text-[17px] font-black text-[#1E293B]" style="margin-bottom: 2rem; padding-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #E2E8F0;">Créer un lit</h2>
-        <form method="POST" action="{{ route('beds.store') }}">
+        <form method="POST" action="{{ route('manager.beds.store') }}">
+
             @csrf
             <div style="margin-bottom: 2.5rem;">
                 <label class="block text-[13px] font-bold text-[#64748B] uppercase tracking-wide" style="margin-bottom: 1rem;">Nom / Numéro</label>
@@ -71,6 +72,8 @@
                             {{ $bed->is_maintenance ? 'En Maintenance' : 'Disponible' }}
                         </button>
                     </td>
+                    <form action="{{ route('manager.beds.store') }}" method="POST" class="space-y-5">
+
                     <td class="text-right space-x-2">
                         <button onclick="deleteItem('{{ route('beds.destroy', $bed) }}', 'ce lit')" class="inline-flex items-center justify-center p-2 rounded-xl text-[#EF4444] hover:bg-[#FEF2F2] hover:text-[#DC2626] transition-colors cursor-pointer bg-transparent border-none outline-none" title="Supprimer">
                             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>

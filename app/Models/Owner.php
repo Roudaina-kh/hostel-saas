@@ -9,9 +9,25 @@ class Owner extends Authenticatable
 {
     use Notifiable;
 
-    protected $fillable = ['name', 'email', 'password', 'phone', 'plan'];
+    protected $fillable = [
+        'name',
+        'email',
+        'phone',
+        'password',
+        'status',
+    ];
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'password' => 'hashed',
+        ];
+    }
 
     public function hostels()
     {
