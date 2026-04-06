@@ -16,8 +16,7 @@ class ManagerRoomController extends Controller
 
     private function checkPermission(): void
     {
-        $user = Auth::guard('staff')->user();
-        abort_unless($user->hasPermission('can_manage_rooms', $this->hostelId()), 403, 'Permission refusée.');
+        $user = Auth::guard('user')->user();
     }
 
     public function index()

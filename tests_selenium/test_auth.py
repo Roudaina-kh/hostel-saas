@@ -373,3 +373,18 @@ class TestSecurity:
             f"Attendu: /login, Obtenu: {driver.current_url}"
 
         print("✅ /rooms protégé par authentification")
+
+
+
+#Groupe 1 — TestRegisterPage (4 tests)
+#On vérifie que la page /register s'affiche correctement, que tous les champs sont présents, que le formulaire vide est rejeté, et que deux mots de passe différents déclenchent une erreur de validation.
+#Groupe 2 — TestRegisterFlow (2 tests)
+#On teste le flux complet d'inscription : remplir le formulaire avec des données valides et vérifier la redirection vers /onboarding, puis tenter de s'inscrire avec le même email une deuxième fois et vérifier que c'est bien rejeté.
+#Groupe 3 — TestOnboarding (3 tests)
+#On vérifie que la page d'onboarding s'affiche après inscription, qu'on peut créer un premier hostel en remplissant le formulaire, et que le nom du hostel apparaît bien dans le dashboard après création.
+#Groupe 4 — TestLogout (2 tests)
+#On vérifie que le bouton déconnexion fonctionne et redirige vers /login, puis qu'après déconnexion on ne peut plus accéder au /dashboard directement.
+#Groupe 5 — TestLogin (4 tests)
+#On vérifie que la page /login s'affiche avec ses champs, que de mauvais identifiants sont rejetés avec un message d'erreur, que la connexion réussit avec les bons identifiants, et que la page /login reste accessible sans erreur même si on est déjà connecté.
+#Groupe 6 — TestSecurity (3 tests)
+#On vérifie que le token CSRF est bien présent dans les formulaires pour protéger contre les attaques, que /dashboard est protégé et redirige vers /login si on n'est pas connecté, et que /rooms est également protégé de la même façon

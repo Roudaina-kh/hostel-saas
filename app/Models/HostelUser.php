@@ -14,4 +14,13 @@ class HostelUser extends Pivot
         'role',
         'status',
     ];
+
+    public $incrementing = true;
+
+    protected function casts(): array
+    {
+        return [
+            'status' => 'string',
+        ];
+    }
 }

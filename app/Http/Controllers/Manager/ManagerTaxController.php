@@ -14,15 +14,11 @@ class ManagerTaxController extends Controller
         return session('staff_hostel_id') ?? abort(403, 'Aucun hostel sélectionné.');
     }
 
-    private function checkPermission(): void
-    {
-        $user = Auth::guard('staff')->user();
-        abort_unless($user->hasPermission('can_manage_taxes', $this->hostelId()), 403, 'Permission refusée.');
-    }
+
 
 public function index()
 {
-    $user     = Auth::guard('staff')->user();
+    $user     = Auth::guard('user')->user();
     $hostelId = $this->hostelId();
     $hostel   = $user->hostels()->where('hostels.id', $hostelId)->first();
 
@@ -42,7 +38,6 @@ public function index()
 }
     public function update(Request $request)
     {
-        $this->checkPermission();
         
         $data = $request->validate([
             'taxes_enabled'            => 'boolean',

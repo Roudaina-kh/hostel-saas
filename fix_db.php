@@ -9,26 +9,28 @@ use App\Models\Owner;
 use App\Models\SuperAdmin;
 use App\Models\Hostel;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
-$password = Hash::make('FinanceFlow2026');
+$password = 'password'; // Use plain text, model cast 'hashed' will hash it once!
 
 // 1. Super Admin
 $sa = SuperAdmin::firstOrCreate(
-    ['email' => 'admin@hostel-flow.com'],
+    ['email' => 'superadmin@hostel-saas.com'],
     ['name' => 'Super Admin', 'password' => $password, 'is_active' => true]
 );
+// Force update if it already exists
 $sa->password = $password;
 $sa->save();
-echo "SuperAdmin: {$sa->email} / FinanceFlow2026\n";
+echo "SuperAdmin: {$sa->email} / {$password}\n";
 
 // 2. Owner
 $owner = Owner::firstOrCreate(
-    ['email' => 'owner@hostel-flow.com'],
-    ['name' => 'Hostel Owner', 'password' => $password, 'status' => 'active']
+    ['email' => 'roudaina@gmail.com'],
+    ['name' => 'Owner Test', 'password' => $password, 'status' => 'active']
 );
 $owner->password = $password;
 $owner->save();
-echo "Owner: {$owner->email} / FinanceFlow2026\n";
+echo "Owner: {$owner->email} / {$password}\n";
 
 // Ensure at least one Hostel exists
 $hostel = Hostel::firstOrCreate(
@@ -38,22 +40,30 @@ $hostel = Hostel::firstOrCreate(
 
 // 3. Manager
 $manager = User::firstOrCreate(
-    ['email' => 'manager@hostel-flow.com'],
+    ['email' => 'manager@hostel-saas.com'],
     ['name' => 'Manager User', 'password' => $password, 'status' => 'active']
 );
 $manager->password = $password;
 $manager->save();
-$manager->hostels()->syncWithoutDetaching([$hostel->id => ['role' => 'manager', 'status' => 'active']]);
-echo "Manager: {$manager->email} / FinanceFlow2026\n";
-
-// 4. Financial
-$finance = User::firstOrCreate(
-    ['email' => 'finance@hostel-flow.com'],
-    ['name' => 'Financial User', 'password' => $password, 'status' => 'active']
+// Update pivot without detaching
+DB::table('hostel_user')->updateOrInsert(
+    ['hostel_id' => $hostel->id, 'user_id' => $manager->id],
+    ['role' => 'manager', 'status' => 'active', 'updated_at' => now()]
 );
-$finance->password = $password;
-$finance->save();
-$finance->hostels()->syncWithoutDetaching([$hostel->id => ['role' => 'financial', 'status' => 'active']]);
-echo "Financial: {$finance->email} / FinanceFlow2026\n";
+echo "Manager: {$manager->email} / {$password}\n";
+
+// 4. Staff
+$staff = User::firstOrCreate(
+    ['email' => 'staff@hostel-saas.com'],
+    ['name' => 'Staff User', 'password' => $password, 'status' => 'active']
+);
+$staff->password = $password;
+$staff->save();
+DB::table('hostel_user')->updateOrInsert(
+    ['hostel_id' => $hostel->id, 'user_id' => $staff->id],
+    ['role' => 'staff', 'status' => 'active', 'updated_at' => now()]
+);
+echo "Staff: {$staff->email} / {$password}\n";
 
 echo "Done seeding.\n";
+

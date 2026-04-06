@@ -34,7 +34,7 @@
                                 <i class="fas fa-check-circle mr-3 fa-2x"></i>
                                 <div>
                                     <strong>Caisse Ouverte</strong><br>
-                                    Ouverte le {{ $currentShift->opened_at->format('d/m/Y à H:i') }} par {{ Auth::guard('staff')->user()->name }}
+                                    Ouverte le {{ $currentShift->opened_at->format('d/m/Y à H:i') }} par {{ Auth::guard('user')->user()->name }}
                                 </div>
                             </div>
 

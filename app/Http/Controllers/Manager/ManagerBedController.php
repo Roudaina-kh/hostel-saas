@@ -15,11 +15,7 @@ class ManagerBedController extends Controller
         return session('staff_hostel_id') ?? abort(403, 'Aucun hostel sélectionné.');
     }
 
-    private function checkPermission(): void
-    {
-        $user = Auth::guard('staff')->user();
-        abort_unless($user->hasPermission('can_manage_rooms', $this->hostelId()), 403, 'Permission refusée.');
-    }
+
 
     public function index()
     {
@@ -33,7 +29,6 @@ class ManagerBedController extends Controller
 
     public function store(Request $request)
     {
-        $this->checkPermission();
         
         $data = $request->validate([
             'room_id' => 'required|exists:rooms,id',
@@ -55,7 +50,6 @@ class ManagerBedController extends Controller
 
     public function update(Request $request, Bed $bed)
     {
-        $this->checkPermission();
         $this->authorizeBed($bed);
 
         $bed->update($request->validate([
@@ -68,7 +62,6 @@ class ManagerBedController extends Controller
 
     public function toggleMaintenance(Bed $bed)
     {
-        $this->checkPermission();
         $this->authorizeBed($bed);
         $bed->update(['maintenance' => ! $bed->maintenance]);
 
@@ -80,7 +73,6 @@ class ManagerBedController extends Controller
 
     public function destroy(Bed $bed)
     {
-        $this->checkPermission();
         $this->authorizeBed($bed);
         $bed->delete();
 

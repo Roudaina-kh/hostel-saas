@@ -23,12 +23,15 @@
 
         @php
             $staffHostelId = session('staff_hostel_id');
-            $isStaffGuard  = Auth::guard('staff')->check();
-            $isOwnerGuard  = Auth::check() && ! $isStaffGuard;
+            $isUserGuard   = Auth::guard('user')->check();
+            $isOwnerGuard  = Auth::guard('owner')->check();
+            $isSuperAdmin  = Auth::guard('super_admin')->check();
 
-            $isManager   = $isStaffGuard && Auth::guard('staff')->user()->roleInHostel($staffHostelId) === 'manager';
-            $isFinancial = $isStaffGuard && Auth::guard('staff')->user()->roleInHostel($staffHostelId) === 'financial';
-            $isStaff     = $isStaffGuard && ! $isManager && ! $isFinancial;
+            $isManager   = $isUserGuard && Auth::guard('user')->user()?->roleInHostel($staffHostelId) === 'manager';
+            $isFinancial = $isUserGuard && Auth::guard('user')->user()?->roleInHostel($staffHostelId) === 'financial';
+            $isStaff     = $isUserGuard && ! $isManager && ! $isFinancial;
+
+            $logoutRoute = $isOwnerGuard ? 'owner.logout' : ($isSuperAdmin ? 'super-admin.logout' : 'user.logout');
 
             // ── Menu Owner ──────────────────────────────────────
             if ($isOwnerGuard) {
@@ -111,7 +114,7 @@
     </nav>
 
     {{-- Logout --}}
-    <form method="POST" action="{{ route('logout') }}" class="m-0 mt-auto mx-4 mb-6 flex justify-center">
+    <form method="POST" action="{{ route($logoutRoute) }}" class="m-0 mt-auto mx-4 mb-6 flex justify-center">
         @csrf
         <button type="submit" title="Déconnexion"
                 class="flex items-center justify-center gap-2 font-bold text-[14px] text-black transition-all duration-200 hover:opacity-70 bg-transparent border-none cursor-pointer">

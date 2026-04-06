@@ -2,8 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Auth\OwnerAuthController;
+use App\Http\Controllers\Auth\SuperAdminAuthController;
+use App\Http\Controllers\Auth\UserAuthController;
 use App\Http\Controllers\Auth\OwnerRegisterController;
-use App\Http\Controllers\Auth\UnifiedLoginController;
 use App\Http\Controllers\HostelController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RoomController;
@@ -29,11 +31,60 @@ use App\Http\Controllers\Staff\CashShiftController;
 Route::get('/', [App\Http\Controllers\LandingController::class, 'index'])->name('landing');
 
 // ═══════════════════════════════════════════════════════
-// AUTH UNIFIÉE (Login / Logout)
+// AUTH ROUTES (SEPARATED)
 // ═══════════════════════════════════════════════════════
-Route::get('/login', [UnifiedLoginController::class, 'showForm'])->name('login');
-Route::post('/login', [UnifiedLoginController::class, 'login']);
-Route::post('/logout', [UnifiedLoginController::class, 'logout'])->name('logout');
+
+// 1. Owners
+Route::get('/login', [OwnerAuthController::class, 'create'])->name('owner.login');
+Route::post('/login', [OwnerAuthController::class, 'store'])->name('owner.login.store');
+
+Route::middleware('auth:owner')->group(function () {
+    Route::post('/logout', [OwnerAuthController::class, 'destroy'])->name('owner.logout');
+});
+
+// ═══════════════════════════════════════════════════════
+// SUPER ADMIN AUTH
+// ═══════════════════════════════════════════════════════
+Route::prefix('super-admin')->name('super-admin.')->group(function () {
+
+    Route::middleware('guest:super_admin')->group(function () {
+        Route::get('/login', [SuperAdminAuthController::class, 'create'])->name('login');
+        Route::post('/login', [SuperAdminAuthController::class, 'store'])->name('login.store');
+    });
+
+    Route::middleware('auth:super_admin')->group(function () {
+        Route::post('/logout', [SuperAdminAuthController::class, 'destroy'])->name('logout');
+        Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/owners', [SuperAdminOwnerController::class, 'index'])->name('owners.index');
+        Route::get('/owners/{owner}', [SuperAdminOwnerController::class, 'show'])->name('owners.show');
+        Route::patch('/owners/{owner}/toggle', [SuperAdminOwnerController::class, 'toggle'])->name('owners.toggle');
+        Route::delete('/owners/{owner}', [SuperAdminOwnerController::class, 'destroy'])->name('owners.destroy');
+        Route::get('/hostels', [SuperAdminHostelController::class, 'index'])->name('hostels.index');
+        Route::get('/hostels/{hostel}', [SuperAdminHostelController::class, 'show'])->name('hostels.show');
+        Route::patch('/hostels/{hostel}/toggle', [SuperAdminHostelController::class, 'toggle'])->name('hostels.toggle');
+        Route::delete('/hostels/{hostel}', [SuperAdminHostelController::class, 'destroy'])->name('hostels.destroy');
+    });
+});
+
+// ═══════════════════════════════════════════════════════
+// USER AUTH (staff / manager / financial)
+// ═══════════════════════════════════════════════════════
+Route::prefix('user')->name('user.')->group(function () {
+
+    Route::middleware('guest:user')->group(function () {
+        Route::get('/login', [UserAuthController::class, 'create'])->name('login');
+        Route::post('/login', [UserAuthController::class, 'store'])->name('login.store');
+    });
+
+    Route::middleware('auth:user')->group(function () {
+        Route::post('/logout', [UserAuthController::class, 'destroy'])->name('logout');
+    });
+});
+
+// ═══════════════════════════════════════════════════════
+// REDIRECTIONS LEGACY (compatibilité liens existants)
+// ═══════════════════════════════════════════════════════
+Route::get('/manager/login', fn() => redirect()->route('user.login'));
 
 // ═══════════════════════════════════════════════════════
 // REGISTER OWNER
@@ -45,15 +96,9 @@ Route::get('/register-hostel', [App\Http\Controllers\HostelRequestController::cl
 Route::post('/register-hostel', [App\Http\Controllers\HostelRequestController::class, 'store'])->name('register-hostel.store');
 
 // ═══════════════════════════════════════════════════════
-// REDIRECTIONS LEGACY
-// ═══════════════════════════════════════════════════════
-Route::get('/manager/login', fn() => redirect()->route('login'));
-Route::get('/super-admin/login', fn() => redirect()->route('login'));
-
-// ═══════════════════════════════════════════════════════
 // OWNER ROUTES
 // ═══════════════════════════════════════════════════════
-Route::middleware(['auth'])->group(function () {
+Route::middleware('auth:owner')->group(function () {
 
     // Onboarding
     Route::get('/onboarding', [HostelController::class, 'onboarding'])->name('onboarding.create');
@@ -66,155 +111,89 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('hostels', HostelController::class)->except(['show']);
 
     // Zone protégée par hostel actif
-    Route::middleware(['hostel.selected'])->group(function () {
+    Route::middleware('hostel.selected')->group(function () {
 
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-        // Rooms
         Route::resource('rooms', RoomController::class)->except(['show']);
 
-        // Beds
         Route::get('/beds', [BedController::class, 'index'])->name('beds.index');
         Route::post('/beds', [BedController::class, 'store'])->name('beds.store');
         Route::put('/beds/{bed}', [BedController::class, 'update'])->name('beds.update');
         Route::delete('/beds/{bed}', [BedController::class, 'destroy'])->name('beds.destroy');
         Route::post('/beds/{bed}/toggle-maintenance', [BedController::class, 'toggleMaintenance'])->name('beds.toggle');
 
-        // Tent Spaces
         Route::resource('tent-spaces', TentSpaceController::class)->except(['show']);
 
-        // Pricing
         Route::resource('pricing', PricingController::class)->except(['show']);
         Route::post('/pricing/{pricing}/activate', [PricingController::class, 'activate'])->name('pricing.activate');
 
-        // Taxes
         Route::get('/taxes', [TaxController::class, 'index'])->name('taxes.index');
         Route::put('/taxes', [TaxController::class, 'update'])->name('taxes.update');
 
-        // Team (gestion users/managers par l'owner)
+        // Gestion de l'équipe par le owner
         Route::resource('managers', ManagerController::class)->except(['show']);
     });
 });
 
 // ═══════════════════════════════════════════════════════
-// SUPER ADMIN ROUTES
-// ═══════════════════════════════════════════════════════
-Route::prefix('super-admin')->name('super-admin.')->middleware(['super_admin.auth'])->group(function () {
-
-    Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
-
-    // Owners
-    Route::get('/owners', [SuperAdminOwnerController::class, 'index'])->name('owners.index');
-    Route::get('/owners/{owner}', [SuperAdminOwnerController::class, 'show'])->name('owners.show');
-    Route::patch('/owners/{owner}/toggle', [SuperAdminOwnerController::class, 'toggle'])->name('owners.toggle');
-    Route::delete('/owners/{owner}', [SuperAdminOwnerController::class, 'destroy'])->name('owners.destroy');
-
-    // Hostels
-    Route::get('/hostels', [SuperAdminHostelController::class, 'index'])->name('hostels.index');
-    Route::get('/hostels/{hostel}', [SuperAdminHostelController::class, 'show'])->name('hostels.show');
-    Route::patch('/hostels/{hostel}/toggle', [SuperAdminHostelController::class, 'toggle'])->name('hostels.toggle');
-    Route::delete('/hostels/{hostel}', [SuperAdminHostelController::class, 'destroy'])->name('hostels.destroy');
-});
-
-// ═══════════════════════════════════════════════════════
 // MANAGER ROUTES
 // ═══════════════════════════════════════════════════════
-Route::prefix('manager')->name('manager.')->middleware(['auth:staff', 'manager.auth'])->group(function () {
+Route::prefix('manager')->name('manager.')->middleware(['auth:user', 'manager.auth'])->group(function () {
 
-    // Dashboard
     Route::get('/dashboard', [ManagerDashboardController::class, 'index'])->name('dashboard');
 
-    // Rooms
     Route::resource('rooms', ManagerRoomController::class)->except(['show']);
 
-    // ── Beds ──────────────────────────────────────────────────
+    // Beds
     Route::get('/beds', function () {
-        $user     = Auth::guard('staff')->user();
+        $user     = Auth::guard('user')->user();
         $hostelId = session('staff_hostel_id');
         $hostel   = $user->hostels()->where('hostels.id', $hostelId)->first();
-
-        $beds = \App\Models\Bed::whereHas('room', function ($q) use ($hostelId) {
-            $q->where('hostel_id', $hostelId);
-        })->with('room')->get();
-
-        $rooms = \App\Models\Room::where('hostel_id', $hostelId)
-            ->where('type', 'dormitory')->get();
-
+        $beds     = \App\Models\Bed::whereHas('room', fn($q) => $q->where('hostel_id', $hostelId))->with('room')->get();
+        $rooms    = \App\Models\Room::where('hostel_id', $hostelId)->where('type', 'dormitory')->get();
         return view('manager.beds.index', compact('hostel', 'user', 'beds', 'rooms'));
     })->name('beds.index');
 
     Route::post('/beds', function (\Illuminate\Http\Request $request) {
         $hostelId = session('staff_hostel_id');
-
-        $data = $request->validate([
-            'name'    => 'required|string|max:100',
-            'room_id' => 'required|exists:rooms,id',
-        ]);
-
-        $room = \App\Models\Room::where('id', $data['room_id'])
-            ->where('hostel_id', $hostelId)
-            ->firstOrFail();
-
-        \App\Models\Bed::create([
-            'name'    => $data['name'],
-            'room_id' => $room->id,
-            'hostel_id' => $hostelId,
-        ]);
-
-        return redirect()->route('manager.beds.index')
-            ->with('success', 'Lit ajouté avec succès.');
+        $data = $request->validate(['name' => 'required|string|max:100', 'room_id' => 'required|exists:rooms,id']);
+        $room = \App\Models\Room::where('id', $data['room_id'])->where('hostel_id', $hostelId)->firstOrFail();
+        \App\Models\Bed::create(['name' => $data['name'], 'room_id' => $room->id, 'hostel_id' => $hostelId]);
+        return redirect()->route('manager.beds.index')->with('success', 'Lit ajouté avec succès.');
     })->name('beds.store');
 
     Route::put('/beds/{bed}', function (\Illuminate\Http\Request $request, \App\Models\Bed $bed) {
         $hostelId = session('staff_hostel_id');
         abort_unless($bed->room->hostel_id === (int) $hostelId, 403);
-
-        $bed->update($request->validate([
-            'name' => 'required|string|max:100',
-        ]));
-
-        return redirect()->route('manager.beds.index')
-            ->with('success', 'Lit mis à jour.');
+        $bed->update($request->validate(['name' => 'required|string|max:100']));
+        return redirect()->route('manager.beds.index')->with('success', 'Lit mis à jour.');
     })->name('beds.update');
 
     Route::delete('/beds/{bed}', function (\App\Models\Bed $bed) {
-        $hostelId = session('staff_hostel_id');
-        abort_unless($bed->room->hostel_id === (int) $hostelId, 403);
+        abort_unless($bed->room->hostel_id === (int) session('staff_hostel_id'), 403);
         $bed->delete();
-
-        return redirect()->route('manager.beds.index')
-            ->with('success', 'Lit supprimé.');
+        return redirect()->route('manager.beds.index')->with('success', 'Lit supprimé.');
     })->name('beds.destroy');
 
     Route::post('/beds/{bed}/toggle-maintenance', function (\App\Models\Bed $bed) {
-        $hostelId = session('staff_hostel_id');
-        abort_unless($bed->room->hostel_id === (int) $hostelId, 403);
-        $bed->update(['maintenance' => !$bed->maintenance]);
-
-        return response()->json([
-            'success'     => true,
-            'maintenance' => $bed->maintenance,
-        ]);
+        abort_unless($bed->room->hostel_id === (int) session('staff_hostel_id'), 403);
+        $bed->update(['maintenance' => ! $bed->maintenance]);
+        return response()->json(['success' => true, 'maintenance' => $bed->maintenance]);
     })->name('beds.toggle-maintenance');
 
-    // ── Pricing ───────────────────────────────────────────────
+    // Pricing
     Route::get('/pricing', function () {
-        $user     = Auth::guard('staff')->user();
+        $user     = Auth::guard('user')->user();
         $hostelId = session('staff_hostel_id');
         $hostel   = $user->hostels()->where('hostels.id', $hostelId)->first();
-
-        $prices = \App\Models\RoomPrice::whereHas('room', function ($q) use ($hostelId) {
-            $q->where('hostel_id', $hostelId);
-        })->with('room')->latest()->get();
-
-        $rooms = \App\Models\Room::where('hostel_id', $hostelId)->get();
-
+        $prices   = \App\Models\RoomPrice::whereHas('room', fn($q) => $q->where('hostel_id', $hostelId))->with('room')->latest()->get();
+        $rooms    = \App\Models\Room::where('hostel_id', $hostelId)->get();
         return view('manager.pricing.index', compact('hostel', 'user', 'prices', 'rooms'));
     })->name('pricing.index');
 
     Route::post('/pricing', function (\Illuminate\Http\Request $request) {
         $hostelId = session('staff_hostel_id');
-
         $data = $request->validate([
             'room_id'      => 'required|exists:rooms,id',
             'price_amount' => 'required|numeric|min:0',
@@ -223,57 +202,42 @@ Route::prefix('manager')->name('manager.')->middleware(['auth:staff', 'manager.a
             'valid_to'     => 'nullable|date|after_or_equal:valid_from',
             'is_active'    => 'boolean',
         ]);
-
         $data['hostel_id'] = $hostelId;
         $data['is_active'] = $request->boolean('is_active');
-
         if ($data['is_active']) {
-            \App\Models\RoomPrice::where('room_id', $data['room_id'])
-                ->where('hostel_id', $hostelId)
-                ->update(['is_active' => false]);
+            \App\Models\RoomPrice::where('room_id', $data['room_id'])->where('hostel_id', $hostelId)->update(['is_active' => false]);
         }
-
         \App\Models\RoomPrice::create($data);
-
-        return redirect()->route('manager.pricing.index')
-            ->with('success', 'Tarif ajouté.');
+        return redirect()->route('manager.pricing.index')->with('success', 'Tarif ajouté.');
     })->name('pricing.store');
 
     Route::delete('/pricing/{pricing}', function (\App\Models\RoomPrice $pricing) {
-        $hostelId = session('staff_hostel_id');
-        abort_unless($pricing->hostel_id === (int) $hostelId, 403);
+        abort_unless($pricing->hostel_id === (int) session('staff_hostel_id'), 403);
         $pricing->delete();
-
-        return redirect()->route('manager.pricing.index')
-            ->with('success', 'Tarif supprimé.');
+        return redirect()->route('manager.pricing.index')->with('success', 'Tarif supprimé.');
     })->name('pricing.destroy');
 
-    // ── Taxes ─────────────────────────────────────────────────
+    // Taxes
     Route::get('/taxes', [ManagerTaxController::class, 'index'])->name('taxes.index');
     Route::put('/taxes', [ManagerTaxController::class, 'update'])->name('taxes.update');
 
-    // ── Staff / Équipe ────────────────────────────────────────
+    // Staff (équipe gérée par manager)
     Route::get('/staff', function () {
-        $user     = Auth::guard('staff')->user();
+        $user     = Auth::guard('user')->user();
         $hostelId = session('staff_hostel_id');
         $hostel   = $user->hostels()->where('hostels.id', $hostelId)->first();
-
-        $staff = \App\Models\User::whereHas('hostels', function ($q) use ($hostelId) {
-            $q->where('hostels.id', $hostelId);
-        })->with(['hostels' => function ($q) use ($hostelId) {
-            $q->where('hostels.id', $hostelId);
-        }])->get()->map(function ($u) {
-            $u->roleInHostel  = $u->hostels->first()?->pivot->role;
-            $u->statusInHostel = $u->hostels->first()?->pivot->status;
-            return $u;
-        });
-
+        $staff    = \App\Models\User::whereHas('hostels', fn($q) => $q->where('hostels.id', $hostelId))
+            ->with(['hostels' => fn($q) => $q->where('hostels.id', $hostelId)])
+            ->get()->map(function ($u) {
+                $u->roleInHostel   = $u->hostels->first()?->pivot->role;
+                $u->statusInHostel = $u->hostels->first()?->pivot->status;
+                return $u;
+            });
         return view('manager.staff.index', compact('hostel', 'user', 'staff'));
     })->name('staff.index');
 
     Route::post('/staff', function (\Illuminate\Http\Request $request) {
         $hostelId = session('staff_hostel_id');
-
         $data = $request->validate([
             'name'     => 'required|string|max:100',
             'email'    => 'required|email|unique:users,email',
@@ -281,7 +245,6 @@ Route::prefix('manager')->name('manager.')->middleware(['auth:staff', 'manager.a
             'phone'    => 'nullable|string|max:30',
             'role'     => 'required|in:manager,staff,financial',
         ]);
-
         $newUser = \App\Models\User::create([
             'name'     => $data['name'],
             'email'    => $data['email'],
@@ -289,40 +252,27 @@ Route::prefix('manager')->name('manager.')->middleware(['auth:staff', 'manager.a
             'phone'    => $data['phone'] ?? null,
             'status'   => 'active',
         ]);
-
-        $newUser->hostels()->attach($hostelId, [
-            'role'   => $data['role'],
-            'status' => 'active',
-        ]);
-
-        return redirect()->route('manager.staff.index')
-            ->with('success', 'Membre de l\'équipe ajouté.');
+        $newUser->hostels()->attach($hostelId, ['role' => $data['role'], 'status' => 'active']);
+        return redirect()->route('manager.staff.index')->with('success', 'Membre de l\'équipe ajouté.');
     })->name('staff.store');
 
     Route::delete('/staff/{staffUser}', function (\App\Models\User $staffUser) {
-        $hostelId = session('staff_hostel_id');
-
-        // Retirer uniquement l'affectation au hostel (pas supprimer le user)
-        $staffUser->hostels()->detach($hostelId);
-
-        return redirect()->route('manager.staff.index')
-            ->with('success', 'Membre retiré de l\'équipe.');
+        $staffUser->hostels()->detach(session('staff_hostel_id'));
+        return redirect()->route('manager.staff.index')->with('success', 'Membre retiré de l\'équipe.');
     })->name('staff.destroy');
 
-    // ── Settings Hostel ───────────────────────────────────────
+    // Settings Hostel
     Route::get('/settings', function () {
-        $user     = Auth::guard('staff')->user();
+        $user     = Auth::guard('user')->user();
         $hostelId = session('staff_hostel_id');
         $hostel   = $user->hostels()->where('hostels.id', $hostelId)->first();
-
         return view('manager.settings.edit', compact('hostel', 'user'));
     })->name('settings.edit');
 
     Route::put('/settings', function (\Illuminate\Http\Request $request) {
-        $user     = Auth::guard('staff')->user();
+        $user     = Auth::guard('user')->user();
         $hostelId = session('staff_hostel_id');
         $hostel   = $user->hostels()->where('hostels.id', $hostelId)->first();
-
         $data = $request->validate([
             'name'    => 'required|string|max:150',
             'address' => 'nullable|string|max:255',
@@ -331,34 +281,22 @@ Route::prefix('manager')->name('manager.')->middleware(['auth:staff', 'manager.a
             'phone'   => 'nullable|string|max:20',
             'email'   => 'nullable|email|max:150',
         ]);
-
         $hostel->update($data);
-
-        return redirect()->route('manager.settings.edit')
-            ->with('success', 'Paramètres mis à jour.');
+        return redirect()->route('manager.settings.edit')->with('success', 'Paramètres mis à jour.');
     })->name('settings.update');
 });
 
 // ═══════════════════════════════════════════════════════
 // STAFF & FINANCIAL ROUTES
 // ═══════════════════════════════════════════════════════
-Route::prefix('staff')->name('staff.')->middleware(['auth:staff'])->group(function () {
+Route::prefix('staff')->name('staff.')->middleware('auth:user')->group(function () {
 
     Route::get('/dashboard', [StaffDashboardController::class, 'index'])->name('dashboard');
 
-    // Financial
-    Route::get('/financial/dashboard', [FinancialDashboardController::class, 'index'])
-        ->name('financial.dashboard');
-    Route::get('/financial/reports', [FinancialReportController::class, 'index'])
-        ->name('financial.reports.index');
-    Route::post('/financial/reports/generate', [FinancialReportController::class, 'generate'])
-        ->name('financial.reports.generate');
+    Route::get('/financial/dashboard', [FinancialDashboardController::class, 'index'])->name('financial.dashboard');
+    Route::get('/financial/reports', [FinancialReportController::class, 'index'])->name('financial.reports.index');
+    Route::post('/financial/reports/generate', [FinancialReportController::class, 'generate'])->name('financial.reports.generate');
 
-    // Cash shifts
-    Route::get('/cash-shifts', [CashShiftController::class, 'index'])
-        ->name('cash-shifts.index');
-    Route::post('/cash-shifts/open', [CashShiftController::class, 'open'])
-        ->name('cash-shifts.open');
-    Route::post('/cash-shifts/close/{shift}', [CashShiftController::class, 'close'])
-        ->name('cash-shifts.close');
+    Route::get('/cash-shifts', [CashShiftController::class, 'index'])->name('cash-shifts.index');
+    Route::post('/cash-shifts/open', [CashShiftController::class, 'open'])->name('cash-shifts.open');
 });

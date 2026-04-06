@@ -36,20 +36,47 @@ class ManagerController extends Controller
     {
         return view('manager.create');
     }
-
     public function store(Request $request)
-    {
-        $hostelId = $this->hostelId();
+{
+    $hostelId = $this->hostelId();
 
-        $data = $request->validate([
-            'name'     => 'required|string|max:100',
-            'email'    => 'required|email|unique:users,email',
-            'password' => 'required|min:8|confirmed',
-            'phone'    => 'nullable|string|max:30',
-            'role'     => 'required|in:manager,staff,financial',
+    $data = $request->validate([
+        'name'     => 'required|string|max:100',
+        'email'    => 'required|email',
+        'password' => 'nullable|min:8|confirmed',
+        'phone'    => 'nullable|string|max:30',
+        'role'     => 'required|in:manager,staff,financial',
+    ]);
+
+    // Vérifier si le user existe déjà
+    $user = User::where('email', $data['email'])->first();
+
+    if ($user) {
+        // User existant — vérifier s'il est déjà dans ce hostel
+        $alreadyInHostel = $user->hostels()
+            ->where('hostels.id', $hostelId)
+            ->exists();
+
+        if ($alreadyInHostel) {
+            return back()->withErrors([
+                'email' => 'Ce membre fait déjà partie de ce hostel.',
+            ]);
+        }
+
+        // Attacher au nouveau hostel avec le nouveau rôle
+        $user->hostels()->attach($hostelId, [
+            'role'   => $data['role'],
+            'status' => 'active',
         ]);
 
-        // Créer le user
+    } else {
+        // Nouveau user — le mot de passe est obligatoire
+        if (empty($data['password'])) {
+            return back()->withErrors([
+                'password' => 'Le mot de passe est obligatoire pour un nouveau membre.',
+            ])->withInput();
+        }
+
         $user = User::create([
             'name'     => $data['name'],
             'email'    => $data['email'],
@@ -58,21 +85,19 @@ class ManagerController extends Controller
             'status'   => 'active',
         ]);
 
-        // L'affecter au hostel avec son rôle
-        DB::table('hostel_user')->insert([
-            'hostel_id'  => $hostelId,
-            'user_id'    => $user->id,
-            'role'       => $data['role'],
-            'status'     => 'active',
-            'created_at' => now(),
-            'updated_at' => now(),
+        $user->hostels()->attach($hostelId, [
+            'role'   => $data['role'],
+            'status' => 'active',
         ]);
-
-        return redirect()->route('managers.index')
-            ->with('success', 'Membre de l\'équipe créé avec succès.');
     }
 
-    public function edit(User $manager)
+    return redirect()->route('managers.index')
+        ->with('success', 'Membre de l\'équipe ajouté avec succès.');
+}
+
+    
+
+    public function edit(User $manager) 
     {
         $hostelId = $this->hostelId();
 

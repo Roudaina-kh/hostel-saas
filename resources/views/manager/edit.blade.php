@@ -55,8 +55,8 @@
             <div class="flex gap-3 pt-4">
                 <button type="submit" class="flex-1 btn-blue">Sauvegarder</button>
                 <a href="{{ route('managers.index') }}"
-                   class="flex-1 px-6 py-2.5 text-center bg-[#F1F5F9] text-[#64748B] rounded-xl font-bold no-underline text-sm leading-[2.5]">
-                   Annuler
+                    class="flex-1 px-6 py-2.5 text-center bg-[#F1F5F9] text-[#64748B] rounded-xl font-bold no-underline text-sm leading-[2.5]">
+                    Annuler
                 </a>
             </div>
         </form>

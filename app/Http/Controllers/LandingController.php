@@ -7,28 +7,35 @@ use Illuminate\Support\Facades\Auth;
 
 class LandingController extends Controller
 {
-    /**
-     * Display the landing page (which also contains the login form).
-     */
     public function index()
     {
-        // Redirection if already logged in (mirroring UnifiedLoginController)
-        if (Auth::guard('super_admin')->check()) return redirect()->route('super-admin.dashboard');
-        if (Auth::check())                       return redirect()->route('dashboard');
-        
-        if (Auth::guard('staff')->check()) {
-            $user = Auth::guard('staff')->user();
+        if (Auth::guard('super_admin')->check()) {
+            return redirect()->route('super-admin.dashboard');
+        }
+
+        if (Auth::guard('owner')->check()) {
+            return redirect()->route('dashboard');
+        }
+
+        if (Auth::guard('user')->check()) {
+            $user     = Auth::guard('user')->user();
             $hostelId = session('staff_hostel_id');
-            
+
             if ($hostelId) {
-                $role = $user->roleInHostel($hostelId);
+                $pivot = $user->hostels()
+                    ->where('hostels.id', $hostelId)
+                    ->wherePivot('status', 'active')
+                    ->first();
+
+                $role = $pivot?->pivot->role;
+
                 return match ($role) {
-                    'financial' => redirect()->route('staff.financial.dashboard'),
                     'manager'   => redirect()->route('manager.dashboard'),
+                    'financial' => redirect()->route('staff.financial.dashboard'),
                     default     => redirect()->route('staff.dashboard'),
                 };
             }
-            
+
             return redirect()->route('staff.dashboard');
         }
 

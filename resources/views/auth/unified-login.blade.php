@@ -51,7 +51,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('login') }}" method="POST" class="space-y-6">
+            <form action="{{ route('user.login.store') }}" method="POST" class="space-y-6">
                 @csrf
                 
                 <div>
@@ -81,13 +81,14 @@
                 </button>
             </form>
 
-            <div class="mt-8 pt-8 border-t border-slate-100 text-center">
-                <p class="text-sm font-medium text-slate-500">
-                    Nouveau ici ? 
-                    <a href="{{ route('register') }}" class="text-blue-600 font-bold hover:underline">Créer un compte partenaire</a>
-                </p>
-            </div>
-        </div>
+            <div class="mt-8 pt-8 border-t border-slate-100 text-center space-y-2">
+    <p class="text-sm font-medium text-slate-500">
+        Vous êtes propriétaire ? 
+        <a href="{{ route('owner.login') }}" class="text-blue-600 font-bold hover:underline">
+            Connexion propriétaire
+        </a>
+    </p>
+</div>
 
         <div class="mt-10 text-center">
             <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">HostelFlow © 2026 — Plateforme de Gestion</p>

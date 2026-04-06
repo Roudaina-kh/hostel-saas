@@ -12,7 +12,7 @@ class ManagerDashboardController extends Controller
 {
     public function index()
     {
-        $manager  = Auth::guard('staff')->user();
+        $manager  = Auth::guard('user')->user();
         $hostelId = session('staff_hostel_id');
 
         if (!$hostelId) {
@@ -26,7 +26,7 @@ class ManagerDashboardController extends Controller
             ->first();
 
         if (!$hostel) {
-            Auth::guard('staff')->logout();
+            Auth::guard('user')->logout();
             return redirect()->route('login')->with('error', 'Hostel introuvable.');
         }
 

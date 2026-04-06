@@ -3,12 +3,12 @@
 return [
 
     'defaults' => [
-        'guard' => 'web',
+        'guard' => 'owner',
         'passwords' => 'owners',
     ],
 
     'guards' => [
-        'web' => [
+        'owner' => [
             'driver' => 'session',
             'provider' => 'owners',
         ],
@@ -18,7 +18,7 @@ return [
             'provider' => 'super_admins',
         ],
 
-        'staff' => [
+        'user' => [
             'driver' => 'session',
             'provider' => 'users',
         ],

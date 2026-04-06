@@ -1,22 +1,22 @@
 <?php
-$db = new PDO('sqlite:database/database.sqlite');
-function dumpTable($db, $table) {
-    echo "--- $table ---\n";
-    try {
-        $stmt = $db->query("SELECT id, email FROM $table");
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            print_r($row);
-        }
-    } catch (Exception $e) { echo $e->getMessage() . "\n"; }
+require 'vendor/autoload.php';
+$app = require_once 'bootstrap/app.php';
+$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$kernel->bootstrap();
+
+$out = "=== OWNERS ===\n";
+foreach (\App\Models\Owner::all() as $owner) {
+    $out .= $owner->email . " (status: " . $owner->status . ")\n";
 }
-dumpTable($db, 'super_admins');
-dumpTable($db, 'owners');
-dumpTable($db, 'users');
 
-echo "--- hostels ---\n";
-$stmt = $db->query("SELECT id, name FROM hostels");
-while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) { print_r($row); }
+$out .= "\n=== USERS ===\n";
+foreach (\App\Models\User::all() as $user) {
+    $out .= $user->email . " (status: " . $user->status . ")\n";
+}
 
-echo "--- hostel_user ---\n";
-$stmt = $db->query("SELECT * FROM hostel_user");
-while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) { print_r($row); }
+$out .= "\n=== SUPER ADMINS ===\n";
+foreach (\App\Models\SuperAdmin::all() as $sa) {
+    $out .= $sa->email . " (is_active: " . $sa->is_active . ")\n";
+}
+
+file_put_contents('c:/Users/khrij/hostel-saas/dump.txt', $out);

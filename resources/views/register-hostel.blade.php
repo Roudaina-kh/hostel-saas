@@ -40,7 +40,7 @@
             <a href="#" class="text-sm font-bold text-slate-600 hover:text-blue-600">Guides</a>
         </nav>
         <div class="flex items-center gap-4">
-            <a href="{{ route('login') }}" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold shadow-lg shadow-blue-200 transition-all active:scale-95">Extranet</a>
+            <a href="{{ route('owner.login')}}" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold shadow-lg shadow-blue-200 transition-all active:scale-95">Extranet</a>
         </div>
     </header>
 

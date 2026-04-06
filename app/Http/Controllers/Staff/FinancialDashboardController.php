@@ -13,7 +13,7 @@ class FinancialDashboardController extends Controller
 {
     public function index()
     {
-        $user = Auth::guard('staff')->user();
+        $user = Auth::guard('user')->user();
 
         // Nouvelle structure : hostel via pivot
         $hostelId = session('staff_hostel_id');
@@ -23,7 +23,7 @@ class FinancialDashboardController extends Controller
             ->first();
 
         if (!$hostel) {
-            Auth::guard('staff')->logout();
+            Auth::guard('user')->logout();
             return redirect()->route('login')
                 ->with('error', 'Aucun hostel actif trouvé.');
         }

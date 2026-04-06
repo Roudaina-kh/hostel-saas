@@ -24,7 +24,7 @@ class StaffSeeder extends Seeder
     ['email' => 'manager@hostel-saas.com'],
     [
         'name'     => 'Manager Test',
-        'password' => Hash::make('Manager@2024!'),
+        'password' => 'Manager@2024!', // Model hashed cast will handle hashing
         'status'   => 'active',
     ]
 );
@@ -39,15 +39,14 @@ class StaffSeeder extends Seeder
         ]);
 
         // ── Financier ─────────────────────────────────────
-        $financier = User::updateOrCreate(
+    $financier = User::updateOrCreate(
     ['email' => 'finance@hostel-flow.com'],
     [
         'name'     => 'Responsable Financier',
-        'password' => Hash::make('Finance@2024!'),
+        'password' => 'Finance@2024!', // ← plain text
         'status'   => 'active',
     ]
 );
-
         DB::table('hostel_user')->insertOrIgnore([
             'hostel_id'  => $hostel->id,
             'user_id'    => $financier->id,
@@ -62,7 +61,7 @@ class StaffSeeder extends Seeder
     ['email' => 'staff@hostel-saas.com'],
     [
         'name'     => 'Staff Test',
-        'password' => Hash::make('Staff@2024!'),
+        'password' => 'Staff@2024!', // Model hashed cast will handle hashing
         'status'   => 'active',
     ]
 );

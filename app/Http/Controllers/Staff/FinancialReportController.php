@@ -10,7 +10,7 @@ class FinancialReportController extends Controller
 {
     private function getHostel()
     {
-        $user = Auth::guard('staff')->user();
+        $user = Auth::guard('user')->user();
         return $user->hostels()
             ->where('hostels.id', session('staff_hostel_id'))
             ->wherePivot('status', 'active')
@@ -19,11 +19,11 @@ class FinancialReportController extends Controller
 
     public function index()
     {
-        $user   = Auth::guard('staff')->user();
+        $user   = Auth::guard('user')->user();
         $hostel = $this->getHostel();
 
         if (!$hostel) {
-            Auth::guard('staff')->logout();
+            Auth::guard('user')->logout();
             return redirect()->route('login')->with('error', 'Aucun hostel actif trouvé.');
         }
 

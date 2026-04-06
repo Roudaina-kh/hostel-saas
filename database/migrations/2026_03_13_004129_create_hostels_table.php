@@ -10,8 +10,9 @@ return new class extends Migration
     {
         Schema::create('hostels', function (Blueprint $table) {
             $table->id();
+
             $table->foreignId('owner_id')
-                ->constrained()
+                ->constrained('owners')
                 ->cascadeOnDelete();
 
             $table->string('name');
@@ -20,6 +21,7 @@ return new class extends Migration
             $table->string('address')->nullable();
             $table->string('city')->nullable();
             $table->string('country')->nullable();
+
             $table->enum('status', ['active', 'inactive'])->default('active');
 
             $table->timestamps();

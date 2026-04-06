@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion Propriétaire — HostelFlow</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
@@ -22,6 +22,20 @@
             --gray-300:  #E8EEF2;
             --input-bg:  #F8FBFD;
         }
+        <div class="mt-6 text-center text-xs text-slate-400 space-y-1">
+    <p>
+        Staff / Manager / Financial → 
+        <a href="{{ route('user.login') }}" class="text-blue-500 font-bold hover:underline">
+            Connexion équipe
+        </a>
+    </p>
+    <p>
+        Administration → 
+        <a href="{{ route('super-admin.login') }}" class="text-blue-500 font-bold hover:underline">
+            Super Admin
+        </a>
+    </p>
+</div>
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -297,7 +311,7 @@
             @endif
 
             {{-- Formulaire --}}
-            <form method="POST" action="{{ route('login') }}">
+            <form method="POST" action="{{ route('owner.login.store') }}">
                 @csrf
 
                 {{-- Email --}}
@@ -343,6 +357,12 @@
                     </svg>
                 </button>
             </form>
+            <div class="mt-4 text-center text-xs text-slate-400">
+    Vous êtes staff / manager ? 
+    <a href="{{ route('user.login') }}" class="text-blue-500 font-bold hover:underline">
+        Connexion équipe
+    </a>
+</div>
 
             <div class="divider fade-up d6"><span>ou</span></div>
 

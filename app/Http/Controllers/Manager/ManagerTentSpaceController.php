@@ -14,11 +14,7 @@ class ManagerTentSpaceController extends Controller
         return session('staff_hostel_id') ?? abort(403, 'Aucun hostel sélectionné.');
     }
 
-    private function checkPermission(): void
-    {
-        $user = Auth::guard('staff')->user();
-        abort_unless($user->hasPermission('can_manage_rooms', $this->hostelId()), 403, 'Permission refusée.');
-    }
+
 
     public function index()
     {
@@ -28,13 +24,11 @@ class ManagerTentSpaceController extends Controller
 
     public function create()
     {
-        $this->checkPermission();
         return view('manager.tent-spaces.create');
     }
 
     public function store(Request $request)
     {
-        $this->checkPermission();
         $data = $this->validateTent($request);
         $data['hostel_id'] = $this->hostelId();
         TentSpace::create($data);
@@ -45,14 +39,12 @@ class ManagerTentSpaceController extends Controller
 
     public function edit(TentSpace $tentSpace)
     {
-        $this->checkPermission();
         $this->authorizeTent($tentSpace);
         return view('manager.tent-spaces.edit', compact('tentSpace'));
     }
 
     public function update(Request $request, TentSpace $tentSpace)
     {
-        $this->checkPermission();
         $this->authorizeTent($tentSpace);
         $tentSpace->update($this->validateTent($request));
 
@@ -62,7 +54,6 @@ class ManagerTentSpaceController extends Controller
 
     public function destroy(TentSpace $tentSpace)
     {
-        $this->checkPermission();
         $this->authorizeTent($tentSpace);
         $tentSpace->delete();
 

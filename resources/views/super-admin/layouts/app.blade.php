@@ -62,7 +62,7 @@
                     <p style="color:rgba(255,255,255,0.4); font-size:0.7rem; margin:0;">Super Admin</p>
                 </div>
             </div>
-            <form method="POST" action="{{ route('logout') }}">
+            <form method="POST" action="{{ route('super-admin.logout') }}">
                 @csrf
                 <button style="width:100%; padding:0.5rem; border-radius:0.5rem; border:none;
                                background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.7);

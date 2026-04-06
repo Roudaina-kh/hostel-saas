@@ -15,11 +15,7 @@ class ManagerStaffController extends Controller
         return session('staff_hostel_id') ?? abort(403, 'Aucun hostel sélectionné.');
     }
 
-    private function checkPermission(): void
-    {
-        $user = Auth::guard('staff')->user();
-        abort_unless($user->hasPermission('can_manage_team', $this->hostelId()), 403, 'Permission refusée.');
-    }
+
 
     public function index()
     {
@@ -34,13 +30,11 @@ class ManagerStaffController extends Controller
 
     public function create()
     {
-        $this->checkPermission();
         return view('manager.staff.create');
     }
 
     public function store(Request $request)
     {
-        $this->checkPermission();
 
         $data = $request->validate([
             'name'     => 'required|string|max:100',
@@ -67,7 +61,6 @@ class ManagerStaffController extends Controller
 
     public function edit(User $staff)
     {
-        $this->checkPermission();
         
         $pivot = $staff->hostels()->where('hostels.id', $this->hostelId())->first()?->pivot;
         abort_unless($pivot, 403);
@@ -81,7 +74,6 @@ class ManagerStaffController extends Controller
 
     public function update(Request $request, User $staff)
     {
-        $this->checkPermission();
         
         $pivot = $staff->hostels()->where('hostels.id', $this->hostelId())->first()?->pivot;
         abort_unless($pivot, 403);
@@ -115,7 +107,6 @@ class ManagerStaffController extends Controller
 
     public function destroy(User $staff)
     {
-        $this->checkPermission();
         
         $exists = $staff->hostels()->where('hostels.id', $this->hostelId())->exists();
         abort_unless($exists, 403);

@@ -19,7 +19,7 @@ class SuperAdminSeeder extends Seeder
         SuperAdmin::create([
             'name'      => 'Super Admin',
             'email'     => 'superadmin@hostel-saas.com',
-            'password'  => Hash::make('SuperAdmin@2024!'),
+            'password'  => 'SuperAdmin@2024!', // Model hashed cast will handle hashing
             'phone'     => null,
             'is_active' => true,
         ]);

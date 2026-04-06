@@ -88,6 +88,7 @@
                         Utilisez le formulaire à gauche pour en créer.
                     </td>
                 </tr>
+                
                 @endforelse
             </tbody>
         </table>

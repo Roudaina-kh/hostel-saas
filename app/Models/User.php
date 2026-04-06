@@ -29,9 +29,12 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * All hostels this user is assigned to (with pivot: role, status).
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | Relations
+    |--------------------------------------------------------------------------
+    */
+
     public function hostels()
     {
         return $this->belongsToMany(Hostel::class)
@@ -40,47 +43,35 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
-    /**
-     * Return the user's role in a given hostel.
-     */
-    public function roleInHostel(?int $hostelId): ?string
-    {
-        if (!$hostelId) return null;
-        $pivot = $this->hostels()->where('hostels.id', $hostelId)->first()?->pivot;
-        return $pivot?->role;
-    }
+    /*
+    |--------------------------------------------------------------------------
+    | Helpers utiles
+    |--------------------------------------------------------------------------
+    */
 
-    /**
-     * Check if this user has an active assignment in a given hostel.
-     */
-    public function isActiveInHostel(?int $hostelId): bool
+    public function hasRole(string $role, int $hostelId): bool
     {
-        if (!$hostelId) return false;
         return $this->hostels()
-            ->where('hostels.id', $hostelId)
-            ->wherePivot('status', 'active')
+            ->where('hostel_id', $hostelId)
+            ->wherePivot('role', $role)
             ->exists();
     }
 
     /**
-     * Helper to get the role-based permission (backward compatibility with Manager model)
+     * Get the role for this user in a specific hostel.
+     * Returns 'manager', 'staff', 'financial', or null.
      */
-    public function hasPermission(string $permission, ?int $hostelId): bool
+    public function roleInHostel(?int $hostelId): ?string
     {
-        if (!$hostelId) return false;
-        $role = $this->roleInHostel($hostelId);
-        
-        if (!$role) return false;
-        if ($role === 'manager') return true; // Les managers ont tout par défaut
+        if (!$hostelId) {
+            return null;
+        }
 
-        return match ($permission) {
-            'can_manage_rooms'        => in_array($role, ['manager', 'staff']),
-            'can_manage_reservations' => in_array($role, ['manager', 'staff']),
-            'can_manage_team'         => $role === 'manager',
-            'can_view_financials'     => in_array($role, ['manager', 'financial']),
-            'can_manage_pricing'      => $role === 'manager',
-            'can_manage_taxes'        => $role === 'manager',
-            default                   => false,
-        };
+        $hostel = $this->hostels()
+            ->where('hostels.id', $hostelId)
+            ->first();
+
+        return $hostel?->pivot?->role;
     }
+
 }

@@ -12,12 +12,12 @@ $app = Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->alias([
-            'hostel.selected'    => \App\Http\Middleware\HostelSelected::class,
-            'super_admin.auth'   => \App\Http\Middleware\SuperAdminAuthenticated::class,
-            'manager.auth'       => \App\Http\Middleware\ManagerAuthenticated::class,
-        ]);
-    })
+    $middleware->alias([
+        'manager.auth'   => \App\Http\Middleware\ManagerAuthenticated::class,
+        'super_admin.auth' => \App\Http\Middleware\SuperAdminAuthenticated::class,
+        'hostel.selected'  => \App\Http\Middleware\HostelSelected::class,
+    ]);
+})
     ->create(); // ✅ TRÈS IMPORTANT
 
 // ⚠️ Bind Exception Handler

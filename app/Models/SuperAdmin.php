@@ -12,8 +12,8 @@ class SuperAdmin extends Authenticatable
     protected $fillable = [
         'name',
         'email',
-        'password',
         'phone',
+        'password',
         'is_active',
         'last_login_at',
         'last_login_ip',
@@ -24,26 +24,12 @@ class SuperAdmin extends Authenticatable
         'remember_token',
     ];
 
-    protected $casts = [
-        'is_active'      => 'boolean',
-        'last_login_at'  => 'datetime',
-    ];
-
-    // Super Admin peut voir tous les owners
-    public function owners()
+    protected function casts(): array
     {
-        return Owner::all();
-    }
-
-    // Super Admin peut voir tous les hostels
-    public function hostels()
-    {
-        return Hostel::all();
-    }
-
-    // Vérifier si le super admin est actif
-    public function isActive(): bool
-    {
-        return $this->is_active;
+        return [
+            'password' => 'hashed',
+            'is_active' => 'boolean',
+            'last_login_at' => 'datetime',
+        ];
     }
 }

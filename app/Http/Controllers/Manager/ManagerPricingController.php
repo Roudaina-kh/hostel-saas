@@ -15,11 +15,7 @@ class ManagerPricingController extends Controller
         return session('staff_hostel_id') ?? abort(403, 'Aucun hostel sélectionné.');
     }
 
-    private function checkPermission(): void
-    {
-        $user = Auth::guard('staff')->user();
-        abort_unless($user->hasPermission('can_manage_pricing', $this->hostelId()), 403, 'Permission refusée.');
-    }
+
 
     public function index()
     {
@@ -32,14 +28,12 @@ class ManagerPricingController extends Controller
 
     public function create()
     {
-        $this->checkPermission();
         $rooms = Room::where('hostel_id', $this->hostelId())->get();
         return view('manager.pricing.create', compact('rooms'));
     }
 
     public function store(Request $request)
     {
-        $this->checkPermission();
         $data = $this->validatePrice($request);
         $data['hostel_id'] = $this->hostelId();
 
@@ -57,7 +51,6 @@ class ManagerPricingController extends Controller
 
     public function edit(RoomPrice $pricing)
     {
-        $this->checkPermission();
         $this->authorizePrice($pricing);
         $rooms = Room::where('hostel_id', $this->hostelId())->get();
         return view('manager.pricing.edit', compact('pricing', 'rooms'));
@@ -65,7 +58,6 @@ class ManagerPricingController extends Controller
 
     public function update(Request $request, RoomPrice $pricing)
     {
-        $this->checkPermission();
         $this->authorizePrice($pricing);
         $data = $this->validatePrice($request);
 
@@ -84,7 +76,6 @@ class ManagerPricingController extends Controller
 
     public function activate(RoomPrice $pricing)
     {
-        $this->checkPermission();
         $this->authorizePrice($pricing);
 
         RoomPrice::where('room_id', $pricing->room_id)
@@ -98,7 +89,6 @@ class ManagerPricingController extends Controller
 
     public function destroy(RoomPrice $pricing)
     {
-        $this->checkPermission();
         $this->authorizePrice($pricing);
         $pricing->delete();
 
