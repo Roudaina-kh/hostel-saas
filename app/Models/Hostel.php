@@ -35,18 +35,39 @@ class Hostel extends Model
         return $this->hasMany(Room::class);
     }
 
-    public function beds()
-    {
-        return $this->hasMany(Bed::class);
-    }
+    // ⚠️ beds() supprimé : beds n'a pas hostel_id
+    // Accès via : $hostel->rooms->each->beds
 
     public function tentSpaces()
     {
         return $this->hasMany(TentSpace::class);
     }
 
-    public function taxSetting()
+    // ⚠️ taxSetting() supprimé : table dépréciée Sprint 1
+    // Remplacée par taxes() ci-dessous
+
+    public function inventoryBlocks()
     {
-        return $this->hasOne(TaxSetting::class);
+        return $this->hasMany(InventoryBlock::class);
+    }
+
+    public function prices()
+    {
+        return $this->hasMany(Price::class);
+    }
+
+    public function taxes()
+    {
+        return $this->hasMany(Tax::class);
+    }
+
+    public function extras()
+    {
+        return $this->hasMany(Extra::class);
+    }
+
+    public function extraStockMovements()
+    {
+        return $this->hasMany(ExtraStockMovement::class);
     }
 }

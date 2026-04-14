@@ -61,17 +61,22 @@ class User extends Authenticatable
      * Get the role for this user in a specific hostel.
      * Returns 'manager', 'staff', 'financial', or null.
      */
-    public function roleInHostel(?int $hostelId): ?string
+ /**
+ * Retourne le rôle de l'utilisateur dans un hostel donné.
+ * Utilisé dans le sidebar pour afficher le bon menu.
+ */
+public function roleInHostel(int $hostelId): ?string
+{
+    return $this->hostels()
+        ->where('hostels.id', $hostelId)
+        ->first()
+        ?->pivot
+        ?->role;
+}
+    // Mouvements de stock créés par cet utilisateur
+    public function extraStockMovementsCreated()
     {
-        if (!$hostelId) {
-            return null;
-        }
-
-        $hostel = $this->hostels()
-            ->where('hostels.id', $hostelId)
-            ->first();
-
-        return $hostel?->pivot?->role;
+        return $this->hasMany(ExtraStockMovement::class, 'created_by');
     }
 
 }

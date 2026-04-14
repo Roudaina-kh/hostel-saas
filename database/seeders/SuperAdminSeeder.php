@@ -16,14 +16,13 @@ class SuperAdminSeeder extends Seeder
             return;
         }
 
-        SuperAdmin::create([
-            'name'      => 'Super Admin',
-            'email'     => 'superadmin@hostel-saas.com',
-            'password'  => 'SuperAdmin@2024!', // Model hashed cast will handle hashing
-            'phone'     => null,
-            'is_active' => true,
-        ]);
-
+  SuperAdmin::create([
+    'name'      => 'Super Admin',
+    'email'     => 'superadmin@hostel-saas.com',
+    'password'  => Hash::make('SuperAdmin@2024!'), // ← corrigé
+    'phone'     => null,
+    'is_active' => true,
+]);
         $this->command->info('✅ Super Admin créé avec succès.');
         $this->command->info('Email    : superadmin@hostel-saas.com');
         $this->command->info('Password : SuperAdmin@2024!');

@@ -13,35 +13,21 @@ function deleteItem(url, label) {
         color: '#1A2B3C',
     }).then(result => {
         if (result.isConfirmed) {
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'X-HTTP-Method-Override': 'DELETE',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ _method: 'DELETE' })
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Supprimé !',
-                        timer: 1500,
-                        showConfirmButton: false,
-                        background: '#FDFAF5',
-                    }).then(() => window.location.reload());
-                }
-            })
-            .catch(err => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erreur',
-                    text: 'La suppression a échoué.',
-                });
-            });
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = url;
+            var csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = '_token';
+            csrf.value = document.querySelector('meta[name="csrf-token"]').content;
+            var method = document.createElement('input');
+            method.type = 'hidden';
+            method.name = '_method';
+            method.value = 'DELETE';
+            form.appendChild(csrf);
+            form.appendChild(method);
+            document.body.appendChild(form);
+            form.submit();
         }
     });
 }

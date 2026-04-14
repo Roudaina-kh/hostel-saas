@@ -19,67 +19,61 @@
     </div>
 
     {{-- Menu --}}
-    <nav class="flex-1 px-4 py-8 space-y-4 overflow-y-auto custom-scrollbar">
+    @php
+        $staffHostelId = session('staff_hostel_id');
+        $isUserGuard   = Auth::guard('user')->check();
+        $isOwnerGuard  = Auth::guard('owner')->check();
+        $isSuperAdmin  = Auth::guard('super_admin')->check();
 
-        @php
-            $staffHostelId = session('staff_hostel_id');
-            $isUserGuard   = Auth::guard('user')->check();
-            $isOwnerGuard  = Auth::guard('owner')->check();
-            $isSuperAdmin  = Auth::guard('super_admin')->check();
+        $isManager   = $isUserGuard && Auth::guard('user')->user()?->roleInHostel($staffHostelId) === 'manager';
+        $isFinancial = $isUserGuard && Auth::guard('user')->user()?->roleInHostel($staffHostelId) === 'financial';
 
-            $isManager   = $isUserGuard && Auth::guard('user')->user()?->roleInHostel($staffHostelId) === 'manager';
-            $isFinancial = $isUserGuard && Auth::guard('user')->user()?->roleInHostel($staffHostelId) === 'financial';
-            $isStaff     = $isUserGuard && ! $isManager && ! $isFinancial;
+        $logoutRoute = $isOwnerGuard ? 'owner.logout' : ($isSuperAdmin ? 'super-admin.logout' : 'user.logout');
 
-            $logoutRoute = $isOwnerGuard ? 'owner.logout' : ($isSuperAdmin ? 'super-admin.logout' : 'user.logout');
+        if ($isOwnerGuard) {
+            $menu = [
+                ['route' => 'dashboard',              'icon' => '📊', 'label' => 'Dashboard'],
+                ['route' => 'rooms.index',            'icon' => '🚪', 'label' => 'Rooms'],
+                ['route' => 'beds.index',             'icon' => '🛏️', 'label' => 'Beds'],
+                ['route' => 'tent-spaces.index',      'icon' => '⛺',  'label' => 'Tent Spaces'],
+                ['route' => 'prices.index',           'icon' => '💲', 'label' => 'Prices'],
+                ['route' => 'taxes.index',            'icon' => '🧾', 'label' => 'Taxes'],
+                ['route' => 'extras.index',           'icon' => '🛒', 'label' => 'Extras'],
+                ['route' => 'inventory-blocks.index', 'icon' => '🚫', 'label' => 'Indisponibilités'],
+                ['route' => 'managers.index',         'icon' => '👥', 'label' => 'Team'],
+                ['route' => 'hostels.index',          'icon' => '🏠', 'label' => 'Hostels'],
+            ];
+            $soon = ['Reservations', 'Reports'];
 
-            // ── Menu Owner ──────────────────────────────────────
-            if ($isOwnerGuard) {
-                $menu = [
-                    ['route' => 'dashboard',          'icon' => '📊', 'label' => 'Dashboard'],
-                    ['route' => 'rooms.index',         'icon' => '🚪', 'label' => 'Chambres'],
-                    ['route' => 'beds.index',          'icon' => '🛏️', 'label' => 'Lits'],
-                    ['route' => 'tent-spaces.index',   'icon' => '⛺', 'label' => 'Espaces Tente'],
-                    ['route' => 'pricing.index',       'icon' => '💲', 'label' => 'Tarifs'],
-                    ['route' => 'taxes.index',         'icon' => '🧾', 'label' => 'Taxes'],
-                    ['route' => 'managers.index',      'icon' => '👥', 'label' => 'Équipe'],
-                    ['route' => 'hostels.index',       'icon' => '🏠', 'label' => 'Hostels'],
-                ];
-                $soon = ['Reservations', 'Reports'];
-            }
+        } elseif ($isManager) {
+            $menu = [
+                ['route' => 'manager.dashboard',     'icon' => '📊', 'label' => 'Dashboard'],
+                ['route' => 'manager.rooms.index',   'icon' => '🚪', 'label' => 'Chambres'],
+                ['route' => 'manager.beds.index',    'icon' => '🛏️', 'label' => 'Lits'],
+                ['route' => 'manager.pricing.index', 'icon' => '💰', 'label' => 'Tarifs'],
+                ['route' => 'manager.taxes.index',   'icon' => '🧾', 'label' => 'Taxes'],
+                ['route' => 'manager.staff.index',   'icon' => '👥', 'label' => 'Équipe'],
+                ['route' => 'manager.settings.edit', 'icon' => '⚙️', 'label' => 'Paramètres'],
+            ];
+            $soon = ['Reservations', 'Reports'];
 
-            // ── Menu Manager ─────────────────────────────────────
-            elseif ($isManager) {
-                $menu = [
-                    ['route' => 'manager.dashboard',      'icon' => '📊', 'label' => 'Dashboard'],
-                    ['route' => 'manager.rooms.index',    'icon' => '🚪', 'label' => 'Chambres'],
-                    ['route' => 'manager.beds.index',     'icon' => '🛏️', 'label' => 'Lits'],
-                    ['route' => 'manager.pricing.index',  'icon' => '💰', 'label' => 'Tarifs'],
-                    ['route' => 'manager.taxes.index',    'icon' => '🧾', 'label' => 'Taxes'],
-                    ['route' => 'manager.staff.index',    'icon' => '👥', 'label' => 'Équipe'],
-                    ['route' => 'manager.settings.edit',  'icon' => '⚙️', 'label' => 'Paramètres'],
-                ];
-                $soon = ['Reservations', 'Reports'];
-            }
+        } elseif ($isFinancial) {
+            $menu = [
+                ['route' => 'staff.financial.dashboard',     'icon' => '📈', 'label' => 'Dashboard'],
+                ['route' => 'staff.cash-shifts.index',       'icon' => '🔒', 'label' => 'Clôture Caisse'],
+                ['route' => 'staff.financial.reports.index', 'icon' => '📊', 'label' => 'Rapports'],
+            ];
+            $soon = ['Tax Audit', 'Profit Analytics'];
 
-            // ── Menu Financier ───────────────────────────────────
-            elseif ($isFinancial) {
-                $menu = [
-                    ['route' => 'staff.financial.dashboard',      'icon' => '📈', 'label' => 'Dashboard'],
-                    ['route' => 'staff.cash-shifts.index',        'icon' => '🔒', 'label' => 'Clôture Caisse'],
-                    ['route' => 'staff.financial.reports.index',  'icon' => '📊', 'label' => 'Rapports'],
-                ];
-                $soon = ['Tax Audit', 'Profit Analytics'];
-            }
+        } else {
+            $menu = [
+                ['route' => 'staff.dashboard', 'icon' => '📊', 'label' => 'Dashboard'],
+            ];
+            $soon = ['Reservations', 'Reports', 'Financials'];
+        }
+    @endphp
 
-            // ── Menu Staff opérationnel ──────────────────────────
-            else {
-                $menu = [
-                    ['route' => 'staff.dashboard', 'icon' => '📊', 'label' => 'Dashboard'],
-                ];
-                $soon = ['Reservations', 'Reports', 'Financials'];
-            }
-        @endphp
+    <nav class="flex-1 px-4 py-8 space-y-4 overflow-y-auto">
 
         @foreach($menu as $item)
             @php $isActive = request()->routeIs($item['route'] . '*'); @endphp
@@ -125,4 +119,5 @@
             Déconnexion
         </button>
     </form>
+
 </aside>

@@ -2,117 +2,124 @@
 @section('title', 'Taxes')
 @section('content')
 
-<div class="flex items-center justify-between mb-8 fade-up">
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
     <div>
-        <h1 class="text-3xl font-extrabold tracking-tight text-[#0F172A]">Paramètres de taxes</h1>
-        <p class="text-[15px] font-medium text-[#64748B] mt-1">Configurez les taxes applicables à toutes les réservations de votre hostel.</p>
+        <h1 style="font-size:1.5rem; font-weight:700; color:#1A2B3C; margin:0;">Taxes</h1>
+        <p style="font-size:0.875rem; color:#8A9BB0; margin:0.25rem 0 0;">Configurez les taxes de votre hostel.</p>
     </div>
+    <a href="{{ route('taxes.create') }}"
+       style="padding:0.625rem 1.25rem; border-radius:0.75rem; font-size:0.875rem; font-weight:700;
+              color:white; text-decoration:none;
+              background:linear-gradient(135deg,#1A4A6B,#2C6E8A);
+              box-shadow:0 4px 15px rgba(44,110,138,0.3);">
+        + Ajouter une taxe
+    </a>
 </div>
 
-<div class="glass-table p-8 shadow-sm fade-up delay-1 max-w-3xl">
-
-    <form method="POST" action="{{ route('taxes.update') }}" class="space-y-8">
-        @csrf
-        @method('PUT')
-
-        {{-- Toggle taxes actives --}}
-        <div class="flex items-center justify-between p-6 rounded-2xl relative overflow-hidden"
-             style="background: linear-gradient(135deg, #EFF6FF, #E0F2FE); border: 1.5px solid #BAE6FD;">
-            <div class="relative z-10">
-                <p class="text-[17px] font-black text-[#1E293B] tracking-tight">Activer la collecte de taxes</p>
-                <p class="text-[14px] font-medium text-[#475569] mt-1">Si activé, les taxes ci-dessous seront calculées automatiquement lors des réservations.</p>
-            </div>
-            <label class="relative inline-flex items-center cursor-pointer z-10 shrink-0">
-                <input type="checkbox" name="taxes_enabled" value="1" id="taxes_toggle"
-                       {{ $tax->taxes_enabled ? 'checked' : '' }}
-                       class="sr-only peer">
-                <div class="w-14 h-8 rounded-full peer transition-all duration-300 shadow-inner"
-                     style="background: {{ $tax->taxes_enabled ? '#3B82F6' : '#CBD5E1' }};"
-                     id="toggle-bg"
-                     onclick="const chk = document.getElementById('taxes_toggle'); setTimeout(() => { this.style.background = chk.checked ? '#3B82F6' : '#CBD5E1'; }, 50)">
-                </div>
-                <div class="absolute left-1 top-1 w-6 h-6 bg-white rounded-full transition-transform duration-300 peer-checked:translate-x-6 shadow-md"></div>
-            </label>
-            <div class="absolute right-0 top-0 w-32 h-32 bg-white/40 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl pointer-events-none"></div>
-        </div>
-
-        @php 
-            $input = "w-full rounded-xl px-4 py-3.5 text-[15px] font-bold outline-none transition-all duration-300 border border-white/60 bg-white/60 shadow-inner text-[#0F172A]"; 
-            $focus = "this.style.borderColor='#3B82F6';this.style.background='#FFFFFF';this.style.boxShadow='0 0 0 4px rgba(59,130,246,0.15)'";
-            $blur = "this.style.borderColor='rgba(255,255,255,0.6)';this.style.background='rgba(255,255,255,0.6)';this.style.boxShadow='inset 0 2px 4px 0 rgba(0, 0, 0, 0.02)'";
-            
-            $boxClass = "p-6 rounded-2xl border-2 border-[#BAE6FD] bg-gradient-to-br from-[#F0F9FF] to-[#E0F2FE] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg hover:border-[#7DD3FC] group relative overflow-hidden";
-        @endphp
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="{{ $boxClass }}">
-                <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/30 rounded-full blur-xl group-hover:bg-white/50 transition-colors"></div>
-                <label class="block text-[14px] font-black text-[#1E3A8A] mb-4 uppercase tracking-wider relative z-10">TVA (%)</label>
-                <div class="relative z-10">
-                    <input type="number" name="vat_percentage" step="0.01" min="0" max="100"
-                           value="{{ old('vat_percentage', $tax->vat_percentage) }}"
-                           class="{{ $input }}"
-                           onfocus="{!! $focus !!}" onblur="{!! $blur !!}">
-                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[#3B82F6] font-black pointer-events-none text-lg">%</span>
-                </div>
-            </div>
-            <div class="{{ $boxClass }}">
-                <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/30 rounded-full blur-xl group-hover:bg-white/50 transition-colors"></div>
-                <label class="block text-[14px] font-black text-[#1E3A8A] mb-4 uppercase tracking-wider relative z-10">Frais de service (%)</label>
-                <div class="relative z-10">
-                    <input type="number" name="service_fee_percentage" step="0.01" min="0" max="100"
-                           value="{{ old('service_fee_percentage', $tax->service_fee_percentage) }}"
-                           class="{{ $input }}"
-                           onfocus="{!! $focus !!}" onblur="{!! $blur !!}">
-                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[#3B82F6] font-black pointer-events-none text-lg">%</span>
-                </div>
-            </div>
-            <div class="{{ $boxClass }}">
-                <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/30 rounded-full blur-xl group-hover:bg-white/50 transition-colors"></div>
-                <label class="block text-[14px] font-black text-[#1E3A8A] mb-4 uppercase tracking-wider relative z-10">Taxe de séjour / nuit</label>
-                <div class="relative z-10">
-                    <input type="number" name="city_tax_per_night" step="0.001" min="0"
-                           value="{{ old('city_tax_per_night', $tax->city_tax_per_night) }}"
-                           class="{{ $input }} pl-12"
-                           onfocus="{!! $focus !!}" onblur="{!! $blur !!}">
-                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#3B82F6] font-bold pointer-events-none text-lg">💲</span>
-                </div>
-            </div>
-            <div class="{{ $boxClass }}">
-                <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/30 rounded-full blur-xl group-hover:bg-white/50 transition-colors"></div>
-                <label class="block text-[14px] font-black text-[#1E3A8A] mb-4 uppercase tracking-wider relative z-10">Taxe / personne / nuit</label>
-                <div class="relative z-10">
-                    <input type="number" name="per_person_tax_per_night" step="0.001" min="0"
-                           value="{{ old('per_person_tax_per_night', $tax->per_person_tax_per_night) }}"
-                           class="{{ $input }} pl-12"
-                           onfocus="{!! $focus !!}" onblur="{!! $blur !!}">
-                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#3B82F6] font-bold pointer-events-none text-lg">🧑</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="mt-8 flex items-center gap-5 p-6 rounded-2xl transition-all duration-300 cursor-pointer border-2 border-[#BAE6FD] bg-gradient-to-br from-[#F0F9FF] to-[#E0F2FE] hover:-translate-y-1 hover:shadow-lg hover:border-[#7DD3FC]" 
-             onclick="document.getElementById('extras_taxable').click();">
-            <div class="relative flex items-center shrink-0">
-                <input type="checkbox" name="extras_taxable" value="1" id="extras_taxable"
-                       {{ $tax->extras_taxable ? 'checked' : '' }}
-                       class="w-5 h-5 rounded border-[#CBD5E1] text-[#3B82F6] shadow-sm focus:ring-[#3B82F6] cursor-pointer"
-                       onclick="event.stopPropagation()">
-            </div>
-            <div>
-                <label for="extras_taxable" class="text-[15px] font-extrabold text-[#0F172A] cursor-pointer" onclick="event.preventDefault()">
-                    Appliquer les taxes sur les services extras
-                </label>
-                <p class="text-[13px] font-medium text-[#64748B] mt-0.5 pointer-events-none">Si désactivé, seules les chambres/lits seront taxés.</p>
-            </div>
-        </div>
-
-        <button type="submit" class="btn-blue w-full py-4 text-[16px] mt-4">
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-            </svg>
-            Sauvegarder les paramètres
-        </button>
-    </form>
+<div style="background:white; border-radius:1rem; border:1px solid #E8EEF2; overflow:hidden;">
+    <table style="width:100%; border-collapse:collapse; font-size:0.875rem;">
+        <thead>
+            <tr style="background:#F8FBFD;">
+                <th style="padding:1rem 1.25rem; text-align:left; font-weight:600; color:#5A6B7A;">Nom</th>
+                <th style="padding:1rem 1.25rem; text-align:left; font-weight:600; color:#5A6B7A;">Type</th>
+                <th style="padding:1rem 1.25rem; text-align:left; font-weight:600; color:#5A6B7A;">Montant</th>
+                <th style="padding:1rem 1.25rem; text-align:left; font-weight:600; color:#5A6B7A;">Statut</th>
+                <th style="padding:1rem 1.25rem; text-align:right; font-weight:600; color:#5A6B7A;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($taxes as $tax)
+            <tr style="border-top:1px solid #F0F4F8;">
+                <td style="padding:1rem 1.25rem; font-weight:600; color:#1A2B3C;">{{ $tax->name }}</td>
+                <td style="padding:1rem 1.25rem;">
+                    @php
+                    $typeLabels = [
+                        'percentage'                 => '% Pourcentage',
+                        'fixed_amount'               => 'Montant fixe',
+                        'fixed_per_night'            => 'Fixe / nuit',
+                        'fixed_per_person_per_night' => 'Fixe / pers / nuit',
+                    ];
+                    @endphp
+                    <span style="padding:0.25rem 0.75rem; border-radius:9999px; font-size:0.75rem; font-weight:500; background:#EFF6FF; color:#1A4A6B;">
+                        {{ $typeLabels[$tax->type] ?? $tax->type }}
+                    </span>
+                </td>
+                <td style="padding:1rem 1.25rem; font-weight:600; color:#2C6E8A;">
+                    {{ number_format($tax->amount, 3) }}{{ $tax->type === 'percentage' ? ' %' : ' TND' }}
+                </td>
+                <td style="padding:1rem 1.25rem;">
+                    <button onclick="toggleTax({{ $tax->id }})" id="tax-btn-{{ $tax->id }}"
+                            style="padding:0.25rem 0.75rem; border-radius:9999px; font-size:0.75rem; font-weight:500; border:none; cursor:pointer;
+                                   {{ $tax->is_enabled ? 'background:#F0FDF4;color:#2A6B4F;' : 'background:#FEF2F2;color:#DC2626;' }}">
+                        {{ $tax->is_enabled ? '✅ Active' : '❌ Inactive' }}
+                    </button>
+                </td>
+                <td style="padding:1rem 1.25rem; text-align:right; white-space:nowrap;">
+                    <a href="{{ route('taxes.edit', $tax) }}"
+                       style="font-size:0.75rem; font-weight:500; color:#2C6E8A; text-decoration:none; margin-right:0.75rem;">
+                        Modifier
+                    </a>
+                    <button onclick="deleteTax({{ $tax->id }}, '{{ addslashes($tax->name) }}')"
+                            style="font-size:0.75rem; font-weight:500; color:#DC2626; background:none; border:none; cursor:pointer;">
+                        Supprimer
+                    </button>
+                </td>
+            </tr>
+            @empty
+            <tr>
+                <td colspan="5" style="padding:2.5rem; text-align:center; color:#8A9BB0;">
+                    Aucune taxe.
+                    <a href="{{ route('taxes.create') }}" style="color:#2C6E8A; font-weight:500;">Créer la première</a>
+                </td>
+            </tr>
+            @endforelse
+        </tbody>
+    </table>
 </div>
+
+@push('scripts')
+<script>
+function toggleTax(id) {
+    {{-- Route corrigée : /taxes/{tax}/toggle (name: taxes.toggle) --}}
+    fetch('/taxes/' + id + '/toggle', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
+        }
+    }).then(r => r.json()).then(data => {
+        const btn = document.getElementById('tax-btn-' + id);
+        if (data.is_enabled) {
+            btn.textContent = '✅ Active';
+            btn.style.cssText = 'padding:0.25rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:500;border:none;cursor:pointer;background:#F0FDF4;color:#2A6B4F;';
+        } else {
+            btn.textContent = '❌ Inactive';
+            btn.style.cssText = 'padding:0.25rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:500;border:none;cursor:pointer;background:#FEF2F2;color:#DC2626;';
+        }
+    });
+}
+
+function deleteTax(id, name) {
+    Swal.fire({
+        title: 'Supprimer "' + name + '" ?',
+        icon: 'warning', showCancelButton: true,
+        confirmButtonColor: '#DC2626', cancelButtonColor: '#6B7280',
+        confirmButtonText: 'Supprimer', cancelButtonText: 'Annuler', background: '#FDFAF5'
+    }).then(function(r) {
+        if (r.isConfirmed) {
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/taxes/' + id;
+            var csrf = document.createElement('input');
+            csrf.type = 'hidden'; csrf.name = '_token';
+            csrf.value = document.querySelector('meta[name="csrf-token"]').content;
+            var method = document.createElement('input');
+            method.type = 'hidden'; method.name = '_method'; method.value = 'DELETE';
+            form.appendChild(csrf); form.appendChild(method);
+            document.body.appendChild(form); form.submit();
+        }
+    });
+}
+</script>
+@endpush
 @endsection

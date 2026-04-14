@@ -9,22 +9,38 @@ use Illuminate\Support\Facades\Auth;
 
 class ManagerRoomController extends Controller
 {
-    private function hostelId(): int
+    private function getHostelId(): int
     {
-        return session('staff_hostel_id') ?? abort(403, 'Aucun hostel sélectionné.');
+        return (int) session('staff_hostel_id');
+    }
+
+    private function getManager()
+    {
+        return Auth::guard('user')->user();
     }
 
     private function checkPermission(): void
     {
-        $user = Auth::guard('user')->user();
+        $user     = $this->getManager();
+        $hostelId = $this->getHostelId();
+
+        $pivot = $user->hostels()
+            ->where('hostels.id', $hostelId)
+            ->wherePivot('status', 'active')
+            ->first();
+
+        abort_unless($pivot && $pivot->pivot->role === 'manager', 403, 'Permission refusée.');
     }
 
     public function index()
     {
-        $rooms = Room::where('hostel_id', $this->hostelId())
+        $hostelId = $this->getHostelId();
+
+        $rooms = Room::where('hostel_id', $hostelId)
             ->withCount('beds')
             ->with('activePrice')
-            ->latest()->get();
+            ->latest()
+            ->get();
 
         return view('manager.rooms.index', compact('rooms'));
     }
@@ -39,17 +55,32 @@ class ManagerRoomController extends Controller
     {
         $this->checkPermission();
 
-        $data = $request->validate([
-            'name'         => 'required|string|max:150',
+        $validated = $request->validate([
+            'name'         => 'required|string|max:255',
             'type'         => 'required|in:private,dormitory',
-            'min_capacity' => 'required|integer|min:1',
             'max_capacity' => 'required|integer|min:1',
-            'status'       => 'required|in:active,maintenance,inactive',
-            'description'  => 'nullable|string',
+            'description'  => 'nullable|string|max:1000',
+            'is_enabled'   => 'nullable|boolean',
         ]);
 
-        $data['hostel_id'] = $this->hostelId();
-        Room::create($data);
+        $exists = Room::where('hostel_id', $this->getHostelId())
+            ->where('name', $validated['name'])
+            ->exists();
+
+        if ($exists) {
+            return back()
+                ->withErrors(['name' => 'Une chambre avec ce nom existe déjà.'])
+                ->withInput();
+        }
+
+        Room::create([
+            'hostel_id'    => $this->getHostelId(),
+            'name'         => $validated['name'],
+            'type'         => $validated['type'],
+            'max_capacity' => $validated['max_capacity'],
+            'description'  => $validated['description'] ?? null,
+            'is_enabled'   => $request->boolean('is_enabled'),
+        ]);
 
         return redirect()->route('manager.rooms.index')
             ->with('success', 'Chambre créée avec succès.');
@@ -58,23 +89,42 @@ class ManagerRoomController extends Controller
     public function edit(Room $room)
     {
         $this->checkPermission();
-        abort_unless($room->hostel_id === $this->hostelId(), 403);
+        abort_unless($room->hostel_id === $this->getHostelId(), 403);
+
         return view('manager.rooms.edit', compact('room'));
     }
 
     public function update(Request $request, Room $room)
     {
         $this->checkPermission();
-        abort_unless($room->hostel_id === $this->hostelId(), 403);
+        abort_unless($room->hostel_id === $this->getHostelId(), 403);
 
-        $room->update($request->validate([
-            'name'         => 'required|string|max:150',
+        $validated = $request->validate([
+            'name'         => 'required|string|max:255',
             'type'         => 'required|in:private,dormitory',
-            'min_capacity' => 'required|integer|min:1',
             'max_capacity' => 'required|integer|min:1',
-            'status'       => 'required|in:active,maintenance,inactive',
-            'description'  => 'nullable|string',
-        ]));
+            'description'  => 'nullable|string|max:1000',
+            'is_enabled'   => 'nullable|boolean',
+        ]);
+
+        $exists = Room::where('hostel_id', $this->getHostelId())
+            ->where('name', $validated['name'])
+            ->where('id', '!=', $room->id)
+            ->exists();
+
+        if ($exists) {
+            return back()
+                ->withErrors(['name' => 'Une chambre avec ce nom existe déjà.'])
+                ->withInput();
+        }
+
+        $room->update([
+            'name'         => $validated['name'],
+            'type'         => $validated['type'],
+            'max_capacity' => $validated['max_capacity'],
+            'description'  => $validated['description'] ?? null,
+            'is_enabled'   => $request->boolean('is_enabled'),
+        ]);
 
         return redirect()->route('manager.rooms.index')
             ->with('success', 'Chambre mise à jour.');
@@ -83,7 +133,7 @@ class ManagerRoomController extends Controller
     public function destroy(Room $room)
     {
         $this->checkPermission();
-        abort_unless($room->hostel_id === $this->hostelId(), 403);
+        abort_unless($room->hostel_id === $this->getHostelId(), 403);
         $room->delete();
 
         return redirect()->route('manager.rooms.index')

@@ -79,7 +79,7 @@
 function deleteHostel(id) {
     Swal.fire({
         title: 'Supprimer ce hostel ?',
-        text: 'Cette action effacera toutes les données associées (chambres, réservations, etc.).',
+        text: 'Cette action effacera toutes les données associées.',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#EF4444',
@@ -88,32 +88,28 @@ function deleteHostel(id) {
         confirmButtonText: 'Oui, supprimer définitivement',
         customClass: {
             popup: 'rounded-2xl shadow-xl border border-[#E2E8F0]',
-            title: 'text-xl font-extrabold text-[#0F172A]',
-            htmlContainer: 'text-[15px] font-medium text-[#64748B]'
         }
     }).then(result => {
         if (result.isConfirmed) {
-            fetch(`/hostels/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json',
-                }
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({ 
-                        icon: 'success', 
-                        title: 'Hostel supprimé', 
-                        timer: 1500, 
-                        showConfirmButton: false,
-                        customClass: {
-                            popup: 'rounded-2xl shadow-xl'
-                        }
-                    }).then(() => window.location.reload());
-                }
-            });
+            // ← Formulaire classique, pas fetch — le controller retourne un redirect
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/hostels/' + id;
+
+            var csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = '_token';
+            csrf.value = document.querySelector('meta[name="csrf-token"]').content;
+
+            var method = document.createElement('input');
+            method.type = 'hidden';
+            method.name = '_method';
+            method.value = 'DELETE';
+
+            form.appendChild(csrf);
+            form.appendChild(method);
+            document.body.appendChild(form);
+            form.submit();
         }
     });
 }

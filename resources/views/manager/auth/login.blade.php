@@ -31,7 +31,8 @@
         </div>
         @endif
 
-        <form method="POST" action="{{ route('manager.login') }}">
+        {{-- Route corrigée : user.login.store (guard user) --}}
+        <form method="POST" action="{{ route('user.login.store') }}">
             @csrf
 
             <div style="margin-bottom:1.25rem;">
@@ -84,7 +85,7 @@
 
     <p style="text-align:center; margin-top:1.5rem; font-size:0.75rem;
               color:rgba(255,255,255,0.3);">
-        Accès réservé aux managers — Hostel SaaS
+        Accès réservé aux managers — HostelFlow
     </p>
 </div>
 

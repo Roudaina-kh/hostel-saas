@@ -3,24 +3,43 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Bed extends Model
 {
     protected $fillable = [
-        'hostel_id', 'room_id', 'name', 'maintenance', 'status',
+        'room_id',
+        'name',
+        'is_enabled',
     ];
 
-    protected $casts = [
-        'maintenance' => 'boolean',
-    ];
-
-    public function hostel()
+    protected function casts(): array
     {
-        return $this->belongsTo(Hostel::class);
+        return [
+            'is_enabled' => 'boolean',
+        ];
     }
 
-    public function room()
+    // ─── Relations ───────────────────────────────────────────────────────────
+
+    public function room(): BelongsTo
     {
         return $this->belongsTo(Room::class);
+    }
+
+    public function inventoryBlocks(): MorphMany
+    {
+        return $this->morphMany(InventoryBlock::class, 'blockable');
+    }
+
+    // ─── Helpers métier ──────────────────────────────────────────────────────
+
+    /**
+     * Accès au hostel via la room (pas de hostel_id direct dans beds).
+     */
+    public function getHostelIdAttribute(): int
+    {
+        return $this->room->hostel_id;
     }
 }

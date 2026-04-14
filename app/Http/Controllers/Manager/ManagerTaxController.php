@@ -18,23 +18,15 @@ class ManagerTaxController extends Controller
 
 public function index()
 {
-    $user     = Auth::guard('user')->user();
     $hostelId = $this->hostelId();
-    $hostel   = $user->hostels()->where('hostels.id', $hostelId)->first();
 
-    $tax = TaxSetting::firstOrCreate(
-        ['hostel_id' => $hostelId],
-        [
-            'taxes_enabled'            => false,
-            'vat_percentage'           => 0,
-            'city_tax_per_night'       => 0,
-            'per_person_tax_per_night' => 0,
-            'service_fee_percentage'   => 0,
-            'extras_taxable'           => false,
-        ]
-    );
+    $taxes = \App\Models\Tax::where('hostel_id', $hostelId)
+        ->latest()
+        ->get();
 
-    return view('manager.taxes.index', compact('tax', 'hostel', 'user'));
+    $taxSettings = \App\Models\Tax::where('hostel_id', $hostelId)->first();
+
+    return view('manager.taxes.index', compact('taxes', 'taxSettings'));
 }
     public function update(Request $request)
     {

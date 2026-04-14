@@ -1,111 +1,154 @@
 @extends('layouts.app')
-@section('title', 'Lits')
+@section('title', 'Beds')
 @section('content')
 
-<div class="flex items-center justify-between mb-8 fade-up">
-    <div>
-        <h1 class="text-3xl font-extrabold tracking-tight text-[#0F172A]">Lits</h1>
-        <p class="text-[15px] font-medium text-[#64748B] mt-1">Gérez l'inventaire des lits pour vos chambres (dortoirs).</p>
-    </div>
+<div style="margin-bottom:1.5rem;">
+    <h1 style="font-size:1.5rem; font-weight:700; color:#1A2B3C; margin:0;">Beds</h1>
+    <p style="font-size:0.875rem; color:#8A9BB0; margin:0.25rem 0 0;">Gérez les lits des chambres dortoirs.</p>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start fade-up delay-1">
+{{-- Formulaire ajout rapide --}}
+<div style="background:white; border-radius:1rem; padding:1.5rem; border:1px solid #E8EEF2; margin-bottom:1.5rem;">
+    <h2 style="font-size:1rem; font-weight:700; color:#1A2B3C; margin:0 0 1rem;">Ajouter un lit</h2>
 
-    {{-- Formulaire d'ajout rapide --}}
-    <div class="lg:col-span-1 glass-table p-8">
-        <h2 class="text-[17px] font-black text-[#1E293B]" style="margin-bottom: 2rem; padding-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #E2E8F0;">Créer un lit</h2>
-        <form method="POST" action="{{ route('manager.beds.store') }}">
-
-            @csrf
-            <div style="margin-bottom: 2.5rem;">
-                <label class="block text-[13px] font-bold text-[#64748B] uppercase tracking-wide" style="margin-bottom: 1rem;">Nom / Numéro</label>
-                <input type="text" name="name" required placeholder="Ex: Lit 01, Lit Haut A..."
-                       style="padding: 1.25rem 1rem;"
-                       class="w-full rounded-xl text-[14.5px] font-medium outline-none transition-all duration-200 border border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#3B82F6] focus:ring-4 focus:ring-[#EFF6FF]">
-            </div>
-            <div style="margin-bottom: 3rem;">
-                <label class="block text-[13px] font-bold text-[#64748B] uppercase tracking-wide" style="margin-bottom: 1rem;">Assigner à la Chambre</label>
-                <div class="relative">
-                    <select name="room_id" required
-                            style="padding: 1.25rem 1rem;"
-                            class="w-full rounded-xl text-[14.5px] font-medium outline-none transition-all duration-200 border border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#3B82F6] focus:ring-4 focus:ring-[#EFF6FF] appearance-none cursor-pointer">
-                        @foreach($rooms as $r)
-                            <option value="{{ $r->id }}">{{ $r->name }} ({{ $r->type === 'private' ? 'Privée' : 'Dortoir' }})</option>
-                        @endforeach
-                    </select>
-                    <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#94A3B8]">
-                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                    </div>
-                </div>
-            </div>
-            <button type="submit" class="btn-blue w-full" style="padding: 1.25rem; font-size: 16px;">
-                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-                </svg>
-                Ajouter le lit
-            </button>
-        </form>
+    @if($errors->any())
+    <div style="background:#FEF2F2; border:1px solid #FECACA; color:#DC2626; border-radius:0.75rem; padding:1rem; margin-bottom:1rem; font-size:0.875rem;">
+        @foreach($errors->all() as $e)<p style="margin:0.1rem 0;">• {{ $e }}</p>@endforeach
     </div>
+    @endif
 
-    {{-- Liste des lits --}}
-    <div class="flex-1 lg:col-span-2 glass-table">
-        <table class="w-full text-[14.5px] text-left">
-            <thead class="table-header-blue text-[#1E293B] shadow-sm uppercase tracking-wider text-[12px]">
-                <tr>
-                    <th class="font-bold">NOM DU LIT</th>
-                    <th class="font-bold">CHAMBRE</th>
-                    <th class="font-bold text-center">STATUT</th>
-                    <th class="font-bold text-right">ACTIONS</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-[#E2E8F0]">
-                @forelse($beds as $bed)
-                <tr class="table-row-hover">
-                    <td class="font-bold text-[#0F172A] flex items-center gap-3">
-                        <span class="text-xl">🛏️</span>
-                        {{ $bed->name }}
-                    </td>
-                    <td class="font-semibold text-[#475569]">{{ $bed->room->name }}</td>
-                    <td class="text-center">
-                        <button onclick="toggleMaintenance({{ $bed->id }})"
-                                class="inline-flex items-center px-4 py-1.5 rounded-full text-[12px] font-black uppercase tracking-wider shadow-sm transition-all duration-300 {{ $bed->is_maintenance ? 'bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] border border-[#FDE68A]' : 'bg-[#ECFDF5] text-[#059669] hover:bg-[#D1FAE5] border border-[#A7F3D0]' }}">
-                            {{ $bed->is_maintenance ? 'En Maintenance' : 'Disponible' }}
-                        </button>
-                    </td>
-                    <form action="{{ route('manager.beds.store') }}" method="POST" class="space-y-5">
-
-                    <td class="text-right space-x-2">
-                        <button onclick="deleteItem('{{ route('beds.destroy', $bed) }}', 'ce lit')" class="inline-flex items-center justify-center p-2 rounded-xl text-[#EF4444] hover:bg-[#FEF2F2] hover:text-[#DC2626] transition-colors cursor-pointer bg-transparent border-none outline-none" title="Supprimer">
-                            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        </button>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="4" class="py-16 text-center text-[#64748B] font-medium text-[15.5px]">
-                        <div class="text-5xl mb-4 opacity-50">🛏️</div>
-                        Aucun lit n'a été ajouté.<br>
-                        Utilisez le formulaire à gauche pour en créer.
-                    </td>
-                </tr>
-                
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+    <form method="POST" action="{{ route('beds.store') }}"
+          style="display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end;">
+        @csrf
+        <div style="flex:1; min-width:200px;">
+            <label style="display:block; font-size:0.875rem; font-weight:600; color:#1A2B3C; margin-bottom:0.5rem;">
+                Chambre dortoir *
+            </label>
+            <select name="room_id" required
+                    style="width:100%; border-radius:0.75rem; padding:0.75rem 1rem; font-size:0.875rem;
+                           outline:none; border:1.5px solid #D8E8F0; background:#F8FBFD; color:#1A2B3C; box-sizing:border-box;">
+                <option value="">-- Sélectionner --</option>
+                @foreach($rooms as $room)
+                <option value="{{ $room->id }}">{{ $room->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div style="flex:1; min-width:200px;">
+            <label style="display:block; font-size:0.875rem; font-weight:600; color:#1A2B3C; margin-bottom:0.5rem;">
+                Nom du lit *
+            </label>
+            <input type="text" name="name" placeholder="Ex: Lit A1" required
+                   style="width:100%; border-radius:0.75rem; padding:0.75rem 1rem; font-size:0.875rem;
+                          outline:none; border:1.5px solid #D8E8F0; background:#F8FBFD; color:#1A2B3C; box-sizing:border-box;">
+        </div>
+        <button type="submit"
+                style="padding:0.75rem 1.5rem; border-radius:0.75rem; font-size:0.875rem; font-weight:700;
+                       color:white; border:none; cursor:pointer;
+                       background:linear-gradient(135deg,#1A4A6B,#2C6E8A);
+                       box-shadow:0 4px 15px rgba(44,110,138,0.3);">
+            + Ajouter
+        </button>
+    </form>
 </div>
 
+{{-- Liste --}}
+<div style="background:white; border-radius:1rem; border:1px solid #E8EEF2; overflow:hidden;">
+    <table style="width:100%; border-collapse:collapse; font-size:0.875rem;">
+        <thead>
+            <tr style="background:#F8FBFD;">
+                <th style="padding:1rem 1.25rem; text-align:left; font-weight:600; color:#5A6B7A;">Nom</th>
+                <th style="padding:1rem 1.25rem; text-align:left; font-weight:600; color:#5A6B7A;">Chambre</th>
+                <th style="padding:1rem 1.25rem; text-align:left; font-weight:600; color:#5A6B7A;">Statut</th>
+                <th style="padding:1rem 1.25rem; text-align:right; font-weight:600; color:#5A6B7A;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($beds as $bed)
+            <tr style="border-top:1px solid #F0F4F8;">
+                <td style="padding:1rem 1.25rem; font-weight:600; color:#1A2B3C;">{{ $bed->name }}</td>
+                <td style="padding:1rem 1.25rem; color:#5A6B7A;">{{ $bed->room->name }}</td>
+                <td style="padding:1rem 1.25rem;">
+                    <span id="bed-status-{{ $bed->id }}"
+                          style="padding:0.25rem 0.75rem; border-radius:9999px; font-size:0.75rem; font-weight:500;
+                                 {{ $bed->is_enabled ? 'background:#F0FDF4;color:#2A6B4F;' : 'background:#FEF2F2;color:#DC2626;' }}">
+                        {{ $bed->is_enabled ? '✅ Actif' : '❌ Désactivé' }}
+                    </span>
+                </td>
+                <td style="padding:1rem 1.25rem; text-align:right; white-space:nowrap;">
+                    <button onclick="toggleBed({{ $bed->id }})"
+                            id="bed-btn-{{ $bed->id }}"
+                            style="font-size:0.75rem; font-weight:600; margin-right:0.75rem; border:none;
+                                   cursor:pointer; border-radius:0.5rem; padding:0.3rem 0.75rem;
+                                   {{ $bed->is_enabled ? 'background:#FEF2F2; color:#DC2626;' : 'background:#F0FDF4; color:#16A34A;' }}">
+                        {{ $bed->is_enabled ? 'Désactiver' : 'Activer' }}
+                    </button>
+                    <button onclick="deleteBed({{ $bed->id }}, '{{ addslashes($bed->name) }}')"
+                            style="font-size:0.75rem; font-weight:500; color:#DC2626; background:none; border:none; cursor:pointer;">
+                        Supprimer
+                    </button>
+                </td>
+            </tr>
+            @empty
+            <tr>
+                <td colspan="4" style="padding:2.5rem; text-align:center; color:#8A9BB0;">
+                    Aucun lit. Commencez par créer une chambre de type Dormitory.
+                </td>
+            </tr>
+            @endforelse
+        </tbody>
+    </table>
+</div>
+
+@push('scripts')
 <script>
-function toggleMaintenance(id) {
-    fetch(`/beds/${id}/toggle-maintenance`, {
+function toggleBed(id) {
+    fetch('/beds/' + id + '/toggle', {   {{-- ← URL corrigée --}}
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             'Accept': 'application/json',
         }
-    }).then(() => window.location.reload());
+    })
+    .then(r => r.json())
+    .then(data => {
+        const statusSpan = document.getElementById('bed-status-' + id);
+        const btn        = document.getElementById('bed-btn-' + id);
+
+        if (data.is_enabled) {
+            statusSpan.textContent = '✅ Actif';
+            statusSpan.style.cssText = 'padding:0.25rem 0.75rem; border-radius:9999px; font-size:0.75rem; font-weight:500; background:#F0FDF4; color:#2A6B4F;';
+            btn.textContent = 'Désactiver';
+            btn.style.cssText = 'font-size:0.75rem; font-weight:600; margin-right:0.75rem; border:none; cursor:pointer; border-radius:0.5rem; padding:0.3rem 0.75rem; background:#FEF2F2; color:#DC2626;';
+        } else {
+            statusSpan.textContent = '❌ Désactivé';
+            statusSpan.style.cssText = 'padding:0.25rem 0.75rem; border-radius:9999px; font-size:0.75rem; font-weight:500; background:#FEF2F2; color:#DC2626;';
+            btn.textContent = 'Activer';
+            btn.style.cssText = 'font-size:0.75rem; font-weight:600; margin-right:0.75rem; border:none; cursor:pointer; border-radius:0.5rem; padding:0.3rem 0.75rem; background:#F0FDF4; color:#16A34A;';
+        }
+    })
+    .catch(err => console.error('Toggle error:', err));
+}
+
+function deleteBed(id, name) {
+    Swal.fire({
+        title: 'Supprimer "' + name + '" ?',
+        icon: 'warning', showCancelButton: true,
+        confirmButtonColor: '#DC2626', cancelButtonColor: '#6B7280',
+        confirmButtonText: 'Supprimer', cancelButtonText: 'Annuler',
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            var form = document.createElement('form');
+            form.method = 'POST'; form.action = '/beds/' + id;
+            var csrf = document.createElement('input');
+            csrf.type = 'hidden'; csrf.name = '_token';
+            csrf.value = document.querySelector('meta[name="csrf-token"]').content;
+            var method = document.createElement('input');
+            method.type = 'hidden'; method.name = '_method'; method.value = 'DELETE';
+            form.appendChild(csrf); form.appendChild(method);
+            document.body.appendChild(form); form.submit();
+        }
+    });
 }
 </script>
-
-@include('partials.delete-script')
+@endpush
 @endsection

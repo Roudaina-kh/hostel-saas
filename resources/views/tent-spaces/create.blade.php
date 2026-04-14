@@ -1,26 +1,22 @@
 @extends('layouts.app')
 @section('title', 'Ajouter un espace tente')
 @section('content')
-<div class="max-w-xl">
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold" style="color:#1A2B3C;">Ajouter un espace tente</h1>
+<div style="max-width:600px;">
+    <div style="margin-bottom:1.5rem;">
+        <h1 style="font-size:1.5rem; font-weight:700; color:#1A2B3C; margin:0;">Ajouter un espace tente</h1>
     </div>
-    <div class="bg-white rounded-2xl p-8 shadow-sm" style="border:1px solid #E8EEF2;">
+    <div style="background:white; border-radius:1rem; padding:2rem; border:1px solid #E8EEF2;">
         @if($errors->any())
-        <div class="rounded-xl p-4 mb-6 text-sm" style="background:#FEF2F2;border:1px solid #FECACA;color:#DC2626;">
-            @foreach($errors->all() as $e)<p>• {{ $e }}</p>@endforeach
+        <div style="background:#FEF2F2; border:1px solid #FECACA; color:#DC2626; border-radius:0.75rem; padding:1rem; margin-bottom:1.5rem; font-size:0.875rem;">
+            @foreach($errors->all() as $e)<p style="margin:0.1rem 0;">• {{ $e }}</p>@endforeach
         </div>
         @endif
-        <form method="POST" action="{{ route('tent-spaces.store') }}" class="space-y-5">
+        <form method="POST" action="{{ route('tent-spaces.store') }}">
             @csrf
             @include('tent-spaces._form')
-            <div class="flex gap-3 pt-2">
-                <button type="submit" class="px-6 py-2.5 rounded-xl text-sm font-bold text-white"
-                        style="background:linear-gradient(135deg,#1A4A6B,#2C6E8A);box-shadow:0 4px 15px rgba(44,110,138,0.3);">
-                    Créer l'espace
-                </button>
-                <a href="{{ route('tent-spaces.index') }}" class="px-6 py-2.5 rounded-xl text-sm font-medium"
-                style="background:#F8FBFD;color:#5A6B7A;border:1px solid #E8EEF2;">Annuler</a>
+            <div style="display:flex; gap:0.75rem; margin-top:1.5rem;">
+                <button type="submit" style="padding:0.75rem 1.5rem; border-radius:0.75rem; font-size:0.875rem; font-weight:700; color:white; border:none; cursor:pointer; background:linear-gradient(135deg,#1A4A6B,#2C6E8A); box-shadow:0 4px 15px rgba(44,110,138,0.3);">Créer</button>
+                <a href="{{ route('tent-spaces.index') }}" style="padding:0.75rem 1.5rem; border-radius:0.75rem; font-size:0.875rem; font-weight:500; color:#5A6B7A; text-decoration:none; background:#F8FBFD; border:1px solid #E8EEF2;">Annuler</a>
             </div>
         </form>
     </div>

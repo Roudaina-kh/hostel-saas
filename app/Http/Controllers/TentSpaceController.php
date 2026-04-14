@@ -3,18 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\TentSpace;
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreTentSpaceRequest;
+use App\Http\Requests\UpdateTentSpaceRequest;
 
 class TentSpaceController extends Controller
 {
-    private function hostelId(): int
-    {
-        return session('hostel_id');
-    }
-
     public function index()
     {
-        $tentSpaces = TentSpace::where('hostel_id', $this->hostelId())->latest()->get();
+        $tentSpaces = TentSpace::where('hostel_id', session('hostel_id'))
+            ->latest()->get();
         return view('tent-spaces.index', compact('tentSpaces'));
     }
 
@@ -23,14 +20,13 @@ class TentSpaceController extends Controller
         return view('tent-spaces.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreTentSpaceRequest $request)
     {
-        $data = $this->validateTent($request);
-        $data['hostel_id'] = $this->hostelId();
+        $data = $request->validated();
+        $data['hostel_id'] = session('hostel_id');
         TentSpace::create($data);
-
         return redirect()->route('tent-spaces.index')
-            ->with('success', 'Espace tente créé avec succès.');
+            ->with('success', 'Espace tente créé.');
     }
 
     public function edit(TentSpace $tentSpace)
@@ -39,36 +35,32 @@ class TentSpaceController extends Controller
         return view('tent-spaces.edit', compact('tentSpace'));
     }
 
-    public function update(Request $request, TentSpace $tentSpace)
+    public function update(UpdateTentSpaceRequest $request, TentSpace $tentSpace)
     {
         $this->authorizeTent($tentSpace);
-        $tentSpace->update($this->validateTent($request));
-
+        $tentSpace->update($request->validated());
         return redirect()->route('tent-spaces.index')
             ->with('success', 'Espace tente mis à jour.');
     }
 
-public function destroy(TentSpace $tentSpace)
+    // ← Nouveau : toggle actif/inactif
+public function toggle(TentSpace $tentSpace)
 {
     $this->authorizeTent($tentSpace);
-    $tentSpace->delete();
-
-    return redirect()->route('tent-spaces.index')
-        ->with('success', 'Espace tente supprimé avec succès.');
+    $tentSpace->update(['is_enabled' => ! $tentSpace->is_enabled]);
+    return response()->json(['success' => true, 'is_enabled' => $tentSpace->is_enabled]);
 }
 
-    private function validateTent(Request $request): array
+    public function destroy(TentSpace $tentSpace)
     {
-        return $request->validate([
-            'name'        => 'required|string|max:150',
-            'max_tents'   => 'required|integer|min:1',
-            'status'      => 'required|in:active,maintenance,inactive',
-            'description' => 'nullable|string',
-        ]);
+        $this->authorizeTent($tentSpace);
+        $tentSpace->delete();
+        return redirect()->route('tent-spaces.index')
+            ->with('success', 'Espace tente supprimé.');
     }
 
     private function authorizeTent(TentSpace $tentSpace): void
     {
-        abort_unless($tentSpace->hostel_id === $this->hostelId(), 403);
+        abort_unless($tentSpace->hostel_id === (int) session('hostel_id'), 403);
     }
 }

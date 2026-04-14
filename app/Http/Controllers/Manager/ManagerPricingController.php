@@ -19,11 +19,22 @@ class ManagerPricingController extends Controller
 
     public function index()
     {
-        $prices = RoomPrice::where('hostel_id', $this->hostelId())
-            ->with('room')->latest()->get();
-        $rooms = Room::where('hostel_id', $this->hostelId())->get();
+        $hostelId = $this->hostelId();
 
-        return view('manager.pricing.index', compact('prices', 'rooms'));
+        $prices = Price::where('hostel_id', $hostelId)
+            ->whereNotNull('priceable_type')
+            ->with(['priceable', 'taxes'])
+            ->latest()
+            ->get();
+
+        $rooms      = Room::where('hostel_id', $hostelId)->get();
+        $tentSpaces = TentSpace::where('hostel_id', $hostelId)->get();
+        $extras     = Extra::where('hostel_id', $hostelId)->get();
+        $taxes      = Tax::where('hostel_id', $hostelId)->where('is_enabled', 1)->get();
+
+        return view('manager.pricing.index', compact(
+            'prices', 'rooms', 'tentSpaces', 'extras', 'taxes'
+        ));
     }
 
     public function create()
@@ -112,4 +123,5 @@ class ManagerPricingController extends Controller
     {
         abort_unless($pricing->hostel_id === $this->hostelId(), 403);
     }
+    
 }

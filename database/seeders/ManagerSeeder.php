@@ -26,12 +26,11 @@ class ManagerSeeder extends Seeder
 
         // Créer le User
         $user = User::create([
-            'name'     => 'Manager Test',
-            'email'    => 'manager@hostel-saas.com',
-            'password' => 'Manager@2024!', // Model hashed cast will handle hashing
-            'status'   => 'active',
-        ]);
-
+    'name'     => 'Manager Test',
+    'email'    => 'manager@hostel-saas.com',
+    'password' => Hash::make('Manager@2024!'), // ← Hash::make obligatoire
+    'status'   => 'active',
+]);
         // L'affecter au hostel via le pivot
         DB::table('hostel_user')->insert([
             'hostel_id'  => $hostel->id,

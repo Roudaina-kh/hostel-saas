@@ -22,7 +22,6 @@
             --gray-300:  #E8EEF2;
             --input-bg:  #F8FBFD;
         }
-        <div class="mt-6 text-center text-xs text-slate-400 space-y-1">
     <p>
         Staff / Manager / Financial → 
         <a href="{{ route('user.login') }}" class="text-blue-500 font-bold hover:underline">

@@ -11,9 +11,12 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\BedController;
 use App\Http\Controllers\TentSpaceController;
-use App\Http\Controllers\PricingController;
 use App\Http\Controllers\TaxController;
 use App\Http\Controllers\ManagerController;
+use App\Http\Controllers\PriceController;
+use App\Http\Controllers\ExtraController;
+use App\Http\Controllers\ExtraStockMovementController;
+use App\Http\Controllers\InventoryBlockController;
 use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\SuperAdminOwnerController;
 use App\Http\Controllers\SuperAdmin\SuperAdminHostelController;
@@ -31,10 +34,8 @@ use App\Http\Controllers\Staff\CashShiftController;
 Route::get('/', [App\Http\Controllers\LandingController::class, 'index'])->name('landing');
 
 // ═══════════════════════════════════════════════════════
-// AUTH ROUTES (SEPARATED)
+// OWNER AUTH
 // ═══════════════════════════════════════════════════════
-
-// 1. Owners
 Route::get('/login', [OwnerAuthController::class, 'create'])->name('owner.login');
 Route::post('/login', [OwnerAuthController::class, 'store'])->name('owner.login.store');
 
@@ -82,7 +83,7 @@ Route::prefix('user')->name('user.')->group(function () {
 });
 
 // ═══════════════════════════════════════════════════════
-// REDIRECTIONS LEGACY (compatibilité liens existants)
+// REDIRECTIONS LEGACY
 // ═══════════════════════════════════════════════════════
 Route::get('/manager/login', fn() => redirect()->route('user.login'));
 
@@ -100,38 +101,48 @@ Route::post('/register-hostel', [App\Http\Controllers\HostelRequestController::c
 // ═══════════════════════════════════════════════════════
 Route::middleware('auth:owner')->group(function () {
 
-    // Onboarding
     Route::get('/onboarding', [HostelController::class, 'onboarding'])->name('onboarding.create');
     Route::post('/onboarding', [HostelController::class, 'storeFirst'])->name('onboarding.store');
 
-    // Hostel switcher
     Route::post('/hostel/switch/{hostel}', [HostelController::class, 'switchHostel'])->name('hostel.switch');
 
-    // CRUD Hostels
     Route::resource('hostels', HostelController::class)->except(['show']);
 
-    // Zone protégée par hostel actif
     Route::middleware('hostel.selected')->group(function () {
 
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+        // ── Rooms ──────────────────────────────────────────
         Route::resource('rooms', RoomController::class)->except(['show']);
 
+        // ── Beds ───────────────────────────────────────────
         Route::get('/beds', [BedController::class, 'index'])->name('beds.index');
         Route::post('/beds', [BedController::class, 'store'])->name('beds.store');
         Route::put('/beds/{bed}', [BedController::class, 'update'])->name('beds.update');
+        Route::post('/beds/{bed}/toggle', [BedController::class, 'toggleEnabled'])->name('beds.toggle');
         Route::delete('/beds/{bed}', [BedController::class, 'destroy'])->name('beds.destroy');
-        Route::post('/beds/{bed}/toggle-maintenance', [BedController::class, 'toggleMaintenance'])->name('beds.toggle');
 
+        // ── Tent Spaces ────────────────────────────────────
         Route::resource('tent-spaces', TentSpaceController::class)->except(['show']);
+        Route::post('/tent-spaces/{tentSpace}/toggle', [TentSpaceController::class, 'toggle'])->name('tent-spaces.toggle');
 
-        Route::resource('pricing', PricingController::class)->except(['show']);
-        Route::post('/pricing/{pricing}/activate', [PricingController::class, 'activate'])->name('pricing.activate');
+        // ── Prices (Sprint 2) ──────────────────────────────
+        Route::resource('prices', PriceController::class)->except(['show']);
 
-        Route::get('/taxes', [TaxController::class, 'index'])->name('taxes.index');
-        Route::put('/taxes', [TaxController::class, 'update'])->name('taxes.update');
+        // ── Taxes (Sprint 2) ───────────────────────────────
+        Route::resource('taxes', TaxController::class)->except(['show']);
+        Route::post('/taxes/{tax}/toggle', [TaxController::class, 'toggleEnabled'])->name('taxes.toggle');
 
-        // Gestion de l'équipe par le owner
+        // ── Extras (Sprint 2) ──────────────────────────────
+        Route::resource('extras', ExtraController::class)->except(['show']);
+        Route::get('/extras/{extra}/movements', [ExtraStockMovementController::class, 'index'])->name('extras.movements');
+        Route::post('/extras/{extra}/movements', [ExtraStockMovementController::class, 'store'])->name('extras.movements.store');
+        Route::delete('/extras/movements/{extraStockMovement}', [ExtraStockMovementController::class, 'destroy'])->name('extras.movements.destroy');
+
+        // ── Inventory Blocks (Sprint 2) ────────────────────
+        Route::resource('inventory-blocks', InventoryBlockController::class)->except(['show', 'create', 'edit']);
+
+        // ── Team ───────────────────────────────────────────
         Route::resource('managers', ManagerController::class)->except(['show']);
     });
 });
@@ -145,7 +156,116 @@ Route::prefix('manager')->name('manager.')->middleware(['auth:user', 'manager.au
 
     Route::resource('rooms', ManagerRoomController::class)->except(['show']);
 
-    // Beds
+    // ── Helper closure : données communes pricing ──────
+    $pricingData = function () {
+        $user     = Auth::guard('user')->user();
+        $hostelId = session('staff_hostel_id');
+        $hostel   = $user->hostels()->where('hostels.id', $hostelId)->first();
+
+        $currentManager = (object) [
+            'can_manage_pricing' => true,
+        ];
+
+        $prices = \App\Models\Price::where('hostel_id', $hostelId)
+            ->with(['priceable', 'taxes'])
+            ->whereNotNull('priceable_type')
+            ->latest()
+            ->get();
+
+        $rooms      = \App\Models\Room::where('hostel_id', $hostelId)->get();
+        $tentSpaces = \App\Models\TentSpace::where('hostel_id', $hostelId)->get();
+        $extras     = \App\Models\Extra::where('hostel_id', $hostelId)->get();
+        $taxes      = \App\Models\Tax::where('hostel_id', $hostelId)->where('is_enabled', true)->get();
+
+        return compact('user', 'hostel', 'hostelId', 'currentManager', 'prices', 'rooms', 'tentSpaces', 'extras', 'taxes');
+    };
+
+    // ── Pricing : INDEX ───────────────────────────────
+    Route::get('/pricing', function () use ($pricingData) {
+        $data = $pricingData();
+        return view('manager.pricing.index', $data);
+    })->name('pricing.index');
+
+    // ── Pricing : CREATE ──────────────────────────────
+    Route::get('/pricing/create', function () use ($pricingData) {
+        $data = $pricingData();
+        return view('manager.pricing.create', $data);
+    })->name('pricing.create');
+
+    // ── Pricing : STORE ───────────────────────────────
+    Route::post('/pricing', function (\Illuminate\Http\Request $request) {
+        $hostelId = session('staff_hostel_id');
+
+        $data = $request->validate([
+            'priceable_type' => 'required|in:room,tent_space,extra',
+            'priceable_id'   => 'required|integer',
+            'pricing_mode'   => 'required|in:per_room,per_bed,per_person,per_unit,per_night,per_person_per_night',
+            'price_ht'       => 'required|numeric|min:0',
+            'price_ttc'      => 'required|numeric|min:0',
+            'valid_from'     => 'required|date',
+            'valid_to'       => 'nullable|date|after_or_equal:valid_from',
+            'tax_ids'        => 'nullable|array',
+            'tax_ids.*'      => 'exists:taxes,id',
+        ]);
+
+        // Le morphMap dans AppServiceProvider gère la conversion type court → classe
+        $data['hostel_id'] = $hostelId;
+
+        $taxIds = $data['tax_ids'] ?? [];
+        unset($data['tax_ids']);
+
+        $price = \App\Models\Price::create($data);
+
+        if (!empty($taxIds)) {
+            $price->taxes()->sync($taxIds);
+        }
+
+        return redirect()->route('manager.pricing.index')->with('success', 'Tarif ajouté.');
+    })->name('pricing.store');
+
+    // ── Pricing : EDIT ────────────────────────────────
+    Route::get('/pricing/{price}/edit', function (\App\Models\Price $price) use ($pricingData) {
+        abort_unless($price->hostel_id === (int) session('staff_hostel_id'), 403);
+        $data          = $pricingData();
+        $data['price'] = $price->load(['priceable', 'taxes']);
+        return view('manager.pricing.edit', $data);
+    })->name('pricing.edit');
+
+    // ── Pricing : UPDATE ──────────────────────────────
+    Route::put('/pricing/{price}', function (\Illuminate\Http\Request $request, \App\Models\Price $price) {
+        abort_unless($price->hostel_id === (int) session('staff_hostel_id'), 403);
+
+        $data = $request->validate([
+            'priceable_type' => 'required|in:room,tent_space,extra',
+            'priceable_id'   => 'required|integer',
+            'pricing_mode'   => 'required|in:per_room,per_bed,per_person,per_unit,per_night,per_person_per_night',
+            'price_ht'       => 'required|numeric|min:0',
+            'price_ttc'      => 'required|numeric|min:0',
+            'valid_from'     => 'required|date',
+            'valid_to'       => 'nullable|date|after_or_equal:valid_from',
+            'tax_ids'        => 'nullable|array',
+            'tax_ids.*'      => 'exists:taxes,id',
+        ]);
+
+        // Le morphMap dans AppServiceProvider gère la conversion type court → classe
+        $taxIds = $data['tax_ids'] ?? [];
+        unset($data['tax_ids']);
+
+        $price->update($data);
+        $price->taxes()->sync($taxIds);
+
+        return redirect()->route('manager.pricing.index')->with('success', 'Tarif mis à jour.');
+    })->name('pricing.update');
+
+    // ── Pricing : DESTROY ─────────────────────────────
+    Route::delete('/pricing/{price}', function (\App\Models\Price $price) {
+        abort_unless($price->hostel_id === (int) session('staff_hostel_id'), 403);
+        $price->taxes()->detach();
+        $price->delete();
+        return redirect()->route('manager.pricing.index')->with('success', 'Tarif supprimé.');
+    })->name('pricing.destroy');
+
+    // ── Beds ──────────────────────────────────────────
     Route::get('/beds', function () {
         $user     = Auth::guard('user')->user();
         $hostelId = session('staff_hostel_id');
@@ -157,15 +277,14 @@ Route::prefix('manager')->name('manager.')->middleware(['auth:user', 'manager.au
 
     Route::post('/beds', function (\Illuminate\Http\Request $request) {
         $hostelId = session('staff_hostel_id');
-        $data = $request->validate(['name' => 'required|string|max:100', 'room_id' => 'required|exists:rooms,id']);
-        $room = \App\Models\Room::where('id', $data['room_id'])->where('hostel_id', $hostelId)->firstOrFail();
-        \App\Models\Bed::create(['name' => $data['name'], 'room_id' => $room->id, 'hostel_id' => $hostelId]);
+        $data     = $request->validate(['name' => 'required|string|max:100', 'room_id' => 'required|exists:rooms,id']);
+        $room     = \App\Models\Room::where('id', $data['room_id'])->where('hostel_id', $hostelId)->firstOrFail();
+        \App\Models\Bed::create(['name' => $data['name'], 'room_id' => $room->id]);
         return redirect()->route('manager.beds.index')->with('success', 'Lit ajouté avec succès.');
     })->name('beds.store');
 
     Route::put('/beds/{bed}', function (\Illuminate\Http\Request $request, \App\Models\Bed $bed) {
-        $hostelId = session('staff_hostel_id');
-        abort_unless($bed->room->hostel_id === (int) $hostelId, 403);
+        abort_unless($bed->room->hostel_id === (int) session('staff_hostel_id'), 403);
         $bed->update($request->validate(['name' => 'required|string|max:100']));
         return redirect()->route('manager.beds.index')->with('success', 'Lit mis à jour.');
     })->name('beds.update');
@@ -176,52 +295,11 @@ Route::prefix('manager')->name('manager.')->middleware(['auth:user', 'manager.au
         return redirect()->route('manager.beds.index')->with('success', 'Lit supprimé.');
     })->name('beds.destroy');
 
-    Route::post('/beds/{bed}/toggle-maintenance', function (\App\Models\Bed $bed) {
-        abort_unless($bed->room->hostel_id === (int) session('staff_hostel_id'), 403);
-        $bed->update(['maintenance' => ! $bed->maintenance]);
-        return response()->json(['success' => true, 'maintenance' => $bed->maintenance]);
-    })->name('beds.toggle-maintenance');
-
-    // Pricing
-    Route::get('/pricing', function () {
-        $user     = Auth::guard('user')->user();
-        $hostelId = session('staff_hostel_id');
-        $hostel   = $user->hostels()->where('hostels.id', $hostelId)->first();
-        $prices   = \App\Models\RoomPrice::whereHas('room', fn($q) => $q->where('hostel_id', $hostelId))->with('room')->latest()->get();
-        $rooms    = \App\Models\Room::where('hostel_id', $hostelId)->get();
-        return view('manager.pricing.index', compact('hostel', 'user', 'prices', 'rooms'));
-    })->name('pricing.index');
-
-    Route::post('/pricing', function (\Illuminate\Http\Request $request) {
-        $hostelId = session('staff_hostel_id');
-        $data = $request->validate([
-            'room_id'      => 'required|exists:rooms,id',
-            'price_amount' => 'required|numeric|min:0',
-            'currency'     => 'required|string|max:10',
-            'valid_from'   => 'nullable|date',
-            'valid_to'     => 'nullable|date|after_or_equal:valid_from',
-            'is_active'    => 'boolean',
-        ]);
-        $data['hostel_id'] = $hostelId;
-        $data['is_active'] = $request->boolean('is_active');
-        if ($data['is_active']) {
-            \App\Models\RoomPrice::where('room_id', $data['room_id'])->where('hostel_id', $hostelId)->update(['is_active' => false]);
-        }
-        \App\Models\RoomPrice::create($data);
-        return redirect()->route('manager.pricing.index')->with('success', 'Tarif ajouté.');
-    })->name('pricing.store');
-
-    Route::delete('/pricing/{pricing}', function (\App\Models\RoomPrice $pricing) {
-        abort_unless($pricing->hostel_id === (int) session('staff_hostel_id'), 403);
-        $pricing->delete();
-        return redirect()->route('manager.pricing.index')->with('success', 'Tarif supprimé.');
-    })->name('pricing.destroy');
-
-    // Taxes
+    // ── Taxes ─────────────────────────────────────────
     Route::get('/taxes', [ManagerTaxController::class, 'index'])->name('taxes.index');
     Route::put('/taxes', [ManagerTaxController::class, 'update'])->name('taxes.update');
 
-    // Staff (équipe gérée par manager)
+    // ── Staff ─────────────────────────────────────────
     Route::get('/staff', function () {
         $user     = Auth::guard('user')->user();
         $hostelId = session('staff_hostel_id');
@@ -238,7 +316,7 @@ Route::prefix('manager')->name('manager.')->middleware(['auth:user', 'manager.au
 
     Route::post('/staff', function (\Illuminate\Http\Request $request) {
         $hostelId = session('staff_hostel_id');
-        $data = $request->validate([
+        $data     = $request->validate([
             'name'     => 'required|string|max:100',
             'email'    => 'required|email|unique:users,email',
             'password' => 'required|min:8|confirmed',
@@ -253,15 +331,15 @@ Route::prefix('manager')->name('manager.')->middleware(['auth:user', 'manager.au
             'status'   => 'active',
         ]);
         $newUser->hostels()->attach($hostelId, ['role' => $data['role'], 'status' => 'active']);
-        return redirect()->route('manager.staff.index')->with('success', 'Membre de l\'équipe ajouté.');
+        return redirect()->route('manager.staff.index')->with('success', 'Membre ajouté.');
     })->name('staff.store');
 
     Route::delete('/staff/{staffUser}', function (\App\Models\User $staffUser) {
         $staffUser->hostels()->detach(session('staff_hostel_id'));
-        return redirect()->route('manager.staff.index')->with('success', 'Membre retiré de l\'équipe.');
+        return redirect()->route('manager.staff.index')->with('success', 'Membre retiré.');
     })->name('staff.destroy');
 
-    // Settings Hostel
+    // ── Settings ──────────────────────────────────────
     Route::get('/settings', function () {
         $user     = Auth::guard('user')->user();
         $hostelId = session('staff_hostel_id');
@@ -273,15 +351,14 @@ Route::prefix('manager')->name('manager.')->middleware(['auth:user', 'manager.au
         $user     = Auth::guard('user')->user();
         $hostelId = session('staff_hostel_id');
         $hostel   = $user->hostels()->where('hostels.id', $hostelId)->first();
-        $data = $request->validate([
+        $hostel->update($request->validate([
             'name'    => 'required|string|max:150',
             'address' => 'nullable|string|max:255',
             'city'    => 'nullable|string|max:100',
             'country' => 'nullable|string|max:100',
             'phone'   => 'nullable|string|max:20',
             'email'   => 'nullable|email|max:150',
-        ]);
-        $hostel->update($data);
+        ]));
         return redirect()->route('manager.settings.edit')->with('success', 'Paramètres mis à jour.');
     })->name('settings.update');
 });

@@ -2,53 +2,74 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TaxSetting;
-use Illuminate\Http\Request;
+use App\Models\Tax;
+use App\Http\Requests\StoreTaxRequest;
+use App\Http\Requests\UpdateTaxRequest;
 
 class TaxController extends Controller
 {
-    private function hostelId(): int
-    {
-        return session('hostel_id');
-    }
-
     public function index()
     {
-        $tax = TaxSetting::firstOrCreate(
-            ['hostel_id' => $this->hostelId()],
-            [
-                'taxes_enabled'            => false,
-                'vat_percentage'           => 0,
-                'city_tax_per_night'       => 0,
-                'per_person_tax_per_night' => 0,
-                'service_fee_percentage'   => 0,
-                'extras_taxable'           => false,
-            ]
-        );
+        $taxes = Tax::where('hostel_id', session('hostel_id'))
+            ->latest()
+            ->get();
 
-        return view('taxes.index', compact('tax'));
+        return view('taxes.index', compact('taxes'));
     }
 
-    public function update(Request $request)
+    public function create()
     {
-        $data = $request->validate([
-            'taxes_enabled'            => 'boolean',
-            'vat_percentage'           => 'required|numeric|min:0|max:100',
-            'city_tax_per_night'       => 'required|numeric|min:0',
-            'per_person_tax_per_night' => 'required|numeric|min:0',
-            'service_fee_percentage'   => 'required|numeric|min:0|max:100',
-            'extras_taxable'           => 'boolean',
-        ]);
+        return view('taxes.create');
+    }
 
-        $data['taxes_enabled']  = $request->boolean('taxes_enabled');
-        $data['extras_taxable'] = $request->boolean('extras_taxable');
+    public function store(StoreTaxRequest $request)
+    {
+        $data = $request->validated();
+        $data['hostel_id'] = session('hostel_id');
 
-        TaxSetting::updateOrCreate(
-            ['hostel_id' => $this->hostelId()],
-            $data
-        );
+        Tax::create($data);
 
         return redirect()->route('taxes.index')
-            ->with('success', 'Paramètres de taxes sauvegardés.');
+            ->with('success', 'Taxe créée avec succès.');
+    }
+
+    public function edit(Tax $tax)
+    {
+        $this->authorizeTax($tax);
+        return view('taxes.edit', compact('tax'));
+    }
+
+    public function update(UpdateTaxRequest $request, Tax $tax)
+    {
+        $this->authorizeTax($tax);
+        $tax->update($request->validated());
+
+        return redirect()->route('taxes.index')
+            ->with('success', 'Taxe mise à jour.');
+    }
+
+    public function toggleEnabled(Tax $tax)
+    {
+        $this->authorizeTax($tax);
+        $tax->update(['is_enabled' => ! $tax->is_enabled]);
+
+        return response()->json([
+            'success'    => true,
+            'is_enabled' => $tax->is_enabled,
+        ]);
+    }
+
+    public function destroy(Tax $tax)
+    {
+        $this->authorizeTax($tax);
+        $tax->delete();
+
+        return redirect()->route('taxes.index')
+            ->with('success', 'Taxe supprimée.');
+    }
+
+    private function authorizeTax(Tax $tax): void
+    {
+        abort_unless($tax->hostel_id === (int) session('hostel_id'), 403);
     }
 }
