@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateRoomRequest extends FormRequest
 {
@@ -13,20 +14,34 @@ class UpdateRoomRequest extends FormRequest
 
     public function rules(): array
     {
+        $hostelId = session('hostel_id');
+        $roomId   = $this->route('room')?->id;
+
         return [
-            'name'         => 'required|string|max:150',
-            'type'         => 'required|in:dormitory,private',
-            'max_capacity' => 'required|integer|min:1',
-            'description'  => 'nullable|string',
-            'is_enabled'   => 'boolean', // ← is_enabled, pas is_active
+            'name'         => [
+                'required',
+                'string',
+                'max:100',
+                Rule::unique('rooms', 'name')
+                    ->where('hostel_id', $hostelId)
+                    ->ignore($roomId),
+            ],
+            'type'         => ['required', 'in:private,dormitory'],
+            'max_capacity' => ['required', 'integer', 'min:1'],
+            'is_enabled'   => ['boolean'],
+            'description'  => ['nullable', 'string', 'max:500'],
         ];
     }
 
-    protected function prepareForValidation(): void
+    public function messages(): array
     {
-        // La checkbox non cochée n'envoie rien → on force false
-        $this->merge([
-            'is_enabled' => $this->boolean('is_enabled'),
-        ]);
+        return [
+            'name.required' => 'Le nom de la chambre est obligatoire.',
+            'name.unique'   => 'Une chambre avec ce nom existe déjà dans cet hostel. Veuillez choisir un autre nom.',
+            'type.required' => 'Le type de chambre est obligatoire.',
+            'type.in'       => 'Le type doit être "private" ou "dormitory".',
+            'max_capacity.required' => 'La capacité maximale est obligatoire.',
+            'max_capacity.min'      => 'La capacité doit être au moins 1.',
+        ];
     }
 }

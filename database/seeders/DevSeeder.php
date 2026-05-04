@@ -10,48 +10,88 @@ class DevSeeder extends Seeder
     public function run(): void
     {
         // ── Super Admin ────────────────────────────────────────
-        \App\Models\SuperAdmin::firstOrCreate(
-            ['email' => 'admin@hostel-saas.com'],
-            ['name' => 'Super Admin', 'password' => Hash::make('password123')]
+        $superAdmin = \App\Models\SuperAdmin::firstOrCreate(
+            ['email' => 'admin@hostelflow.com'],
+            [
+                'name' => 'Super Admin',
+                'password' => Hash::make('password123')
+            ]
         );
 
-        // ── Propriétaire ───────────────────────────────────────
+        // ── Owner ──────────────────────────────────────────────
         $owner = \App\Models\Owner::firstOrCreate(
-            ['email' => 'roudaina@gmail.com'],
-            ['name' => 'Roudaina', 'password' => Hash::make('password123'), 'status' => 'active']
+            ['email' => 'roudaina@hostelflow.com'],
+            [
+                'name' => 'Roudaina',
+                'password' => Hash::make('password123'),
+                'status' => 'active'
+            ]
         );
 
         // ── Hostel ─────────────────────────────────────────────
         $hostel = \App\Models\Hostel::firstOrCreate(
-            ['owner_id' => $owner->id, 'name' => 'Hostel Rou'],
-            ['status' => 'active']
+            [
+                'owner_id' => $owner->id,
+                'name' => 'Hostel Rou'
+            ],
+            [
+                'status' => 'active'
+            ]
         );
 
         // ── Manager ────────────────────────────────────────────
         $manager = \App\Models\User::firstOrCreate(
-            ['email' => 'manager@hostel-saas.com'],
-            ['name' => 'Manager Test', 'password' => Hash::make('password123'), 'status' => 'active']
+            ['email' => 'manager@hostelflow.com'],
+            [
+                'name' => 'Manager',
+                'password' => Hash::make('password123'),
+                'status' => 'active'
+            ]
         );
-        if (!$manager->hostels()->where('hostels.id', $hostel->id)->exists()) {
-            $manager->hostels()->attach($hostel->id, ['role' => 'manager', 'status' => 'active']);
-        }
+
+        $this->attachUserToHostel($manager, $hostel, 'manager');
 
         // ── Staff ──────────────────────────────────────────────
         $staff = \App\Models\User::firstOrCreate(
-            ['email' => 'staff@hostel-saas.com'],
-            ['name' => 'Staff Test', 'password' => Hash::make('password123'), 'status' => 'active']
+            ['email' => 'staff@hostelflow.com'],
+            [
+                'name' => 'Staff',
+                'password' => Hash::make('password123'),
+                'status' => 'active'
+            ]
         );
-        if (!$staff->hostels()->where('hostels.id', $hostel->id)->exists()) {
-            $staff->hostels()->attach($hostel->id, ['role' => 'staff', 'status' => 'active']);
-        }
+
+        $this->attachUserToHostel($staff, $hostel, 'staff');
 
         // ── Financier ──────────────────────────────────────────
         $financial = \App\Models\User::firstOrCreate(
-            ['email' => 'financial@hostel-saas.com'],
-            ['name' => 'Financier Test', 'password' => Hash::make('password123'), 'status' => 'active']
+            ['email' => 'finance@hostelflow.com'],
+            [
+                'name' => 'Financier',
+                'password' => Hash::make('password123'),
+                'status' => 'active'
+            ]
         );
-        if (!$financial->hostels()->where('hostels.id', $hostel->id)->exists()) {
-            $financial->hostels()->attach($hostel->id, ['role' => 'financial', 'status' => 'active']);
+
+        $this->attachUserToHostel($financial, $hostel, 'financial');
+    }
+
+    /**
+     * Attach user to hostel with role
+     */
+    private function attachUserToHostel($user, $hostel, $role)
+    {
+        if (!$user->hostels()
+            ->where('hostels.id', $hostel->id)
+            ->exists()) {
+
+            $user->hostels()->attach(
+                $hostel->id,
+                [
+                    'role' => $role,
+                    'status' => 'active'
+                ]
+            );
         }
     }
 }

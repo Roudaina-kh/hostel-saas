@@ -8,49 +8,38 @@ use App\Http\Requests\StoreExtraStockMovementRequest;
 
 class ExtraStockMovementController extends Controller
 {
-   public function index(Extra $extra)
-{
-    abort_unless($extra->hostel_id === (int) session('hostel_id'), 403);
+    public function index(Extra $extra)
+    {
+        abort_unless($extra->hostel_id === (int) session('hostel_id'), 403);
 
-    $movements = $extra->stockMovements()
-        ->with('creator')
-        ->latest()
-        ->get();
+        $movements = $extra->stockMovements()
+            ->with('creator')
+            ->latest()
+            ->get();
 
-    // Déplacer la requête ici depuis la vue
-    $users = \App\Models\User::whereHas('hostels', fn($q) => 
-        $q->where('hostels.id', session('hostel_id'))
-    )->get();
+        $users = \App\Models\User::whereHas('hostels', fn($q) =>
+            $q->where('hostels.id', session('hostel_id'))
+        )->get();
 
-    return view('extras.movements', compact('extra', 'movements', 'users'));
-}
+        return view('extras.movements', compact('extra', 'movements', 'users'));
+    }
+
     public function store(StoreExtraStockMovementRequest $request, Extra $extra)
     {
         abort_unless($extra->hostel_id === (int) session('hostel_id'), 403);
 
-        $data              = $request->validated();
+        $data = $request->validated();
+
+        // On retire le mot de passe — il ne doit pas être persisté
+        unset($data['password']);
+
         $data['hostel_id'] = session('hostel_id');
         $data['extra_id']  = $extra->id;
 
-        // Sécurité : cohérence hostel_id du mouvement et de l'extra
-        abort_unless(
-            (int) $data['hostel_id'] === $extra->hostel_id,
-            403,
-            'Incohérence hostel.'
-        );
-
-        $movement = ExtraStockMovement::create($data);
-
-        /**
-         * Règle métier : mise à jour du stock courant dans extras.stock_quantity
-         * Le movement_type détermine si on ajoute ou soustrait.
-         * Mouvements positifs : initial, purchase, adjustment_in, return
-         * Mouvements négatifs : adjustment_out, damage, loss
-         */
-        if ($extra->stock_mode !== 'unlimited') {
-            $signed = $movement->getSignedQuantity();
-            $extra->increment('stock_quantity', $signed);
-        }
+        // La mise à jour de stock_quantity est gérée automatiquement
+        // par le hook `booted()` du model ExtraStockMovement.
+        // NE PAS appeler increment/decrement ici pour éviter le double-update.
+        ExtraStockMovement::create($data);
 
         return redirect()->route('extras.movements', $extra)
             ->with('success', 'Mouvement enregistré. Stock mis à jour.');
@@ -63,17 +52,8 @@ class ExtraStockMovementController extends Controller
             403
         );
 
-        $extra = $extraStockMovement->extra;
-
-        /**
-         * Sécurité : annulation du mouvement = inversion de l'impact sur le stock.
-         * Si le mouvement avait augmenté le stock, on le diminue, et vice versa.
-         */
-        if ($extra->stock_mode !== 'unlimited') {
-            $signed = $extraStockMovement->getSignedQuantity();
-            $extra->increment('stock_quantity', -$signed);
-        }
-
+        // L'annulation du stock est gérée automatiquement
+        // par le hook `deleted()` du model ExtraStockMovement.
         $extraStockMovement->delete();
 
         return redirect()->back()

@@ -34,6 +34,8 @@ class ExtraStockMovement extends Model
     }
 
     // ─── Boot : mise à jour automatique du stock ──────────────────────────────
+    // NOTE : Le controller NE doit PAS aussi appeler increment/decrement.
+    // La mise à jour du stock est gérée ICI uniquement pour éviter le double-update.
 
     protected static function booted(): void
     {
@@ -44,10 +46,25 @@ class ExtraStockMovement extends Model
                 return;
             }
 
-            if (in_array($movement->movement_type, self::STOCK_IN_TYPES)) {
+            if ($movement->isStockIn()) {
                 $extra->increment('stock_quantity', $movement->quantity);
-            } elseif (in_array($movement->movement_type, self::STOCK_OUT_TYPES)) {
+            } elseif ($movement->isStockOut()) {
                 $extra->decrement('stock_quantity', $movement->quantity);
+            }
+        });
+
+        static::deleted(function (ExtraStockMovement $movement) {
+            $extra = $movement->extra;
+
+            if (! $extra->hasTrackedStock()) {
+                return;
+            }
+
+            // Annulation : on inverse l'impact sur le stock
+            if ($movement->isStockIn()) {
+                $extra->decrement('stock_quantity', $movement->quantity);
+            } elseif ($movement->isStockOut()) {
+                $extra->increment('stock_quantity', $movement->quantity);
             }
         });
     }
@@ -79,5 +96,22 @@ class ExtraStockMovement extends Model
     public function isStockOut(): bool
     {
         return in_array($this->movement_type, self::STOCK_OUT_TYPES);
+    }
+
+    /**
+     * Alias utilisé dans la blade pour afficher ↑ / ↓.
+     */
+    public function isIncrease(): bool
+    {
+        return $this->isStockIn();
+    }
+
+    /**
+     * Retourne la quantité signée (+/-) selon le type de mouvement.
+     * Utilisé uniquement si on a besoin du delta en dehors du boot.
+     */
+    public function getSignedQuantity(): int
+    {
+        return $this->isStockIn() ? $this->quantity : -$this->quantity;
     }
 }

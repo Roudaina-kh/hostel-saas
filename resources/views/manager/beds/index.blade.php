@@ -72,6 +72,13 @@
 <div id="addBedModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
     <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl relative">
         <h3 class="text-xl font-bold text-[#1A2B3C] mb-6">Ajouter un lit</h3>
+        @if($errors->any())
+    <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-4 text-sm">
+        @foreach($errors->all() as $error)
+            <p>• {{ $error }}</p>
+        @endforeach
+    </div>
+@endif
         <form action="{{ route('manager.beds.store') }}" method="POST" class="space-y-5">
             @csrf
             <div>

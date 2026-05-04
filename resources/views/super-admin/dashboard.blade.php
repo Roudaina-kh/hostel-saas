@@ -1,7 +1,12 @@
-@extends('super-admin.layouts.app')
-@section('title', 'Dashboard Plateforme')
-@section('content')
+@extends('layouts.app')   
 
+@section('title', 'Tableau de bord')
+@section('breadcrumb', 'Dashboard')
+@section('page-title', 'Tableau de bord')
+
+@section('content')
+  {{-- votre contenu ici --}}
+@endsection
 <div style="margin-bottom:2rem;">
     <h1 style="font-size:1.5rem; font-weight:700; color:#1A2B3C; margin:0;">
         Vue d'ensemble de la plateforme

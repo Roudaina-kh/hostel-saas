@@ -13,10 +13,10 @@ class BedController extends Controller
     {
         $hostelId = session('hostel_id');
 
-        // Récupère les lits via les rooms du hostel
-        $beds = Bed::whereHas('room', function ($q) use ($hostelId) {
-            $q->where('hostel_id', $hostelId);
-        })->with('room')->latest()->get();
+        $beds = Bed::whereHas('room', fn ($q) => $q->where('hostel_id', $hostelId))
+            ->with('room')
+            ->latest()
+            ->get();
 
         // Seulement les dortoirs pour le formulaire d'ajout
         $rooms = Room::where('hostel_id', $hostelId)
@@ -28,23 +28,15 @@ class BedController extends Controller
 
     public function store(StoreBedRequest $request)
     {
-        $hostelId = session('hostel_id');
-        $data     = $request->validated();
+        $data = $request->validated();
 
-        // Sécurité : vérifier que la room appartient au hostel actif
-        $room = Room::where('id', $data['room_id'])
-            ->where('hostel_id', $hostelId)
-            ->where('type', 'dormitory') // Sécurité : seulement les dortoirs
-            ->firstOrFail();
-
+        // room_id est déjà validé : appartient à l'hostel + type dormitory
         Bed::create([
-            'room_id'    => $room->id,
-            'name'       => $data['name'],
-            'is_enabled' => $data['is_enabled'] ?? true,
+            'room_id' => $data['room_id'],
+            'name'    => $data['name'],
         ]);
 
-        return redirect()->route('beds.index')
-            ->with('success', 'Lit ajouté avec succès.');
+        return redirect()->route('beds.index')->with('success', 'Lit ajouté.');
     }
 
     public function update(UpdateBedRequest $request, Bed $bed)
@@ -52,8 +44,7 @@ class BedController extends Controller
         $this->authorizeBed($bed);
         $bed->update($request->validated());
 
-        return redirect()->route('beds.index')
-            ->with('success', 'Lit mis à jour.');
+        return redirect()->route('beds.index')->with('success', 'Lit mis à jour.');
     }
 
     public function toggleEnabled(Bed $bed)
@@ -72,11 +63,9 @@ class BedController extends Controller
         $this->authorizeBed($bed);
         $bed->delete();
 
-        return redirect()->route('beds.index')
-            ->with('success', 'Lit supprimé.');
+        return redirect()->route('beds.index')->with('success', 'Lit supprimé.');
     }
 
-    // Sécurité : vérifier que le lit appartient au hostel actif via sa room
     private function authorizeBed(Bed $bed): void
     {
         abort_unless(

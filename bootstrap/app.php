@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'hostel.selected'  => \App\Http\Middleware\HostelSelected::class,
             'manager.auth'     => \App\Http\Middleware\ManagerAuthenticated::class,
+            'staff.auth'       => \App\Http\Middleware\StaffAuthenticated::class,
             'super_admin.auth' => \App\Http\Middleware\SuperAdminAuthenticated::class,
         ]);
 
@@ -33,6 +34,11 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
     })
+    ->withMiddleware(function (Middleware $middleware) {
+    $middleware->alias([
+        'reservation.access' => \App\Http\Middleware\ReservationAccess::class,
+    ]);
+})
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();

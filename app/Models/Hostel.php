@@ -70,4 +70,8 @@ class Hostel extends Model
     {
         return $this->hasMany(ExtraStockMovement::class);
     }
+    public function exchangeRates()
+{
+    return $this->hasMany(ExchangeRate::class);
+}
 }

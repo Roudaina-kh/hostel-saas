@@ -1,0 +1,1 @@
+@include('manager.inventory-blocks.form')
