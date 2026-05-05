@@ -97,4 +97,16 @@
     </div>
 
 </body>
+<a href="{{ url('/') }}"
+   style="position:fixed;top:20px;left:24px;z-index:999;display:flex;align-items:center;gap:8px;
+          background:rgba(255,255,255,0.95);border:1px solid #E8DDD0;border-radius:24px;
+          padding:8px 16px 8px 10px;text-decoration:none;font-size:0.82rem;font-weight:600;
+          color:#2C2C2C;box-shadow:0 4px 16px rgba(0,0,0,0.08);backdrop-filter:blur(8px);"
+   onmouseover="this.style.borderColor='#FF6B47';this.style.color='#FF6B47'"
+   onmouseout="this.style.borderColor='#E8DDD0';this.style.color='#2C2C2C'">
+  <img src="{{ asset('images/13.png') }}" alt="HostelFlow"
+       style="height:28px;width:auto;object-fit:contain"
+       onerror="this.style.display='none'">
+  Accueil
+</a>
 </html>

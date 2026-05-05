@@ -299,6 +299,7 @@
                 ['route' => 'exchange-rates.index',   'icon' => '💱', 'label' => 'Taux de change',   'group' => 'finance'],
                 ['route' => 'payments.index',         'icon' => '💳', 'label' => 'Paiements',         'group' => 'finance'],
                 ['route' => 'managers.index',         'icon' => '👥', 'label' => 'Équipe',            'group' => 'admin'],
+                ['route' => 'contact-requests.index', 'icon' => '📩', 'label' => 'Demandes clients', 'group' => 'admin'],
                 ['route' => 'hostels.index',          'icon' => '🏠', 'label' => 'Hostels',           'group' => 'admin'],
             ];
             $soon = ['Rapports', 'Analytics'];
@@ -316,6 +317,7 @@
                 ['route' => 'manager.payments.index', 'icon' => '💳', 'label' => 'Paiements', 'group' => 'finance'],
                 ['route' => 'manager.exchange-rates.index',   'icon' => '💱', 'label' => 'Taux de change',   'group' => 'finance'],
                 ['route' => 'manager.staff.index',            'icon' => '👥', 'label' => 'Équipe',            'group' => 'admin'],
+                ['route' => 'manager.contact-requests.index', 'icon' => '📩', 'label' => 'Demandes clients', 'group' => 'admin'],
                 ['route' => 'manager.settings.edit',          'icon' => '⚙️', 'label' => 'Paramètres',       'group' => 'admin'],
             ];
             $soon = ['Rapports'];

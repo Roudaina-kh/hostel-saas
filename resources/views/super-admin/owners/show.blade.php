@@ -1,234 +1,103 @@
-@extends('super-admin.layouts.app')
-@section('title', $owner->name . ' — Propriétaire')
-@section('breadcrumb', $owner->name)
-@section('page-title', 'Détail Propriétaire')
+@extends('super-admin.layout')
+@section('breadcrumb', 'Propriétaires › Détail')
+@section('page-title', $owner->name)
 
 @section('content')
 
-{{-- ══ PAGE HEADER ══ --}}
-<div class="page-header">
-  <div class="page-header-text">
-    <div class="section-tag">Propriétaires</div>
-    <h1>Fiche <em>propriétaire</em></h1>
-    <p>Informations détaillées et gestion du compte</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+
+  {{-- Infos propriétaire --}}
+  <div class="sa-card">
+    <div class="sa-card-title">👤 Informations du propriétaire</div>
+    <div style="display:flex;flex-direction:column;gap:12px;font-size:13px">
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F1F5F9">
+        <span style="color:#64748B">Nom</span>
+        <span style="font-weight:600">{{ $owner->name }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F1F5F9">
+        <span style="color:#64748B">Email</span>
+        <span style="color:#7C3AED">{{ $owner->email }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F1F5F9">
+        <span style="color:#64748B">Téléphone</span>
+        <span>{{ $owner->phone ?? '—' }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F1F5F9">
+        <span style="color:#64748B">Statut</span>
+        @if($owner->is_active ?? true)
+          <span class="badge badge-active">✅ Actif</span>
+        @else
+          <span class="badge badge-inactive">🚫 Désactivé</span>
+        @endif
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F1F5F9">
+        <span style="color:#64748B">Dernière connexion</span>
+        <span style="font-weight:500">
+          {{ $owner->last_login_at ? $owner->last_login_at->format('d/m/Y à H:i') : 'Jamais connecté' }}
+        </span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F1F5F9">
+        <span style="color:#64748B">IP dernière connexion</span>
+        <span style="font-family:monospace;font-size:12px">{{ $owner->last_login_ip ?? '—' }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0">
+        <span style="color:#64748B">Compte créé le</span>
+        <span>{{ $owner->created_at->format('d/m/Y') }}</span>
+      </div>
+    </div>
   </div>
-  <div class="page-header-actions">
-    <a href="{{ route('super-admin.owners.index') }}" class="btn btn-outline">
-      ← Retour à la liste
-    </a>
-    <form method="POST" action="{{ route('super-admin.owners.toggle', $owner) }}" style="display:inline">
-      @csrf @method('PATCH')
-      <button type="submit" class="btn {{ ($owner->is_active ?? true) ? 'btn-danger' : 'btn-teal' }}">
-        {{ ($owner->is_active ?? true) ? '⏸ Suspendre le compte' : '▶ Réactiver le compte' }}
-      </button>
-    </form>
-    <button type="button"
-            class="btn btn-danger"
-            onclick="openConfirm(
-              '{{ route('super-admin.owners.destroy', $owner) }}',
-              'Supprimer ce propriétaire',
-              'Cette action est irréversible. Toutes les données de {{ addslashes($owner->name) }} seront supprimées définitivement.'
-            )">
-      🗑 Supprimer
-    </button>
+
+  {{-- Hostels du propriétaire --}}
+  <div class="sa-card">
+    <div class="sa-card-title">🏨 Hostels ({{ $owner->hostels->count() }})</div>
+    @forelse($owner->hostels as $hostel)
+      <div style="display:flex;justify-content:space-between;align-items:center;
+                  padding:10px 0;border-bottom:1px solid #F1F5F9;font-size:13px">
+        <div>
+          <div style="font-weight:600">{{ $hostel->name }}</div>
+          <div style="font-size:11px;color:#94A3B8">
+            {{ $hostel->city ?? '' }}{{ $hostel->city && $hostel->country ? ', ' : '' }}{{ $hostel->country ?? '' }}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          @if($hostel->is_active ?? true)
+            <span class="badge badge-active">Actif</span>
+          @else
+            <span class="badge badge-inactive">Désactivé</span>
+          @endif
+          <a href="{{ route('super-admin.hostels.show', $hostel) }}"
+             class="btn btn-secondary btn-sm">Voir</a>
+        </div>
+      </div>
+    @empty
+      <p style="color:#94A3B8;font-size:13px;padding:16px 0">Aucun hostel enregistré.</p>
+    @endforelse
   </div>
+
 </div>
 
-{{-- ══ GRID LAYOUT ══ --}}
-<div style="display:grid;grid-template-columns:1fr 1.4fr;gap:1.5rem;align-items:start">
+{{-- Actions --}}
+<div class="sa-card">
+  <div class="sa-card-title">⚙️ Actions</div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap">
 
-  {{-- ── Colonne gauche : Profil ── --}}
-  <div style="display:flex;flex-direction:column;gap:1.2rem">
+    <form method="POST" action="{{ route('super-admin.owners.toggle', $owner) }}">
+      @csrf @method('PATCH')
+      <button type="submit"
+              class="btn {{ ($owner->is_active ?? true) ? 'btn-warning' : 'btn-primary' }}"
+              onclick="return confirm('Confirmer ?')">
+        {{ ($owner->is_active ?? true) ? '🚫 Désactiver ce compte' : '✅ Réactiver ce compte' }}
+      </button>
+    </form>
 
-    {{-- Carte profil --}}
-    <div class="owner-profile-card">
-      <div class="owner-profile-header">
-        <div class="owner-avatar-large">
-          {{ strtoupper(substr($owner->name, 0, 1)) }}
-        </div>
-        <div>
-          <div class="owner-profile-name">{{ $owner->name }}</div>
-          <div class="owner-profile-email">{{ $owner->email }}</div>
-          <div style="margin-top:8px">
-            @if($owner->is_active ?? true)
-              <span class="badge badge-green">● Compte actif</span>
-            @else
-              <span class="badge badge-red">● Compte suspendu</span>
-            @endif
-          </div>
-        </div>
-      </div>
-      <div class="owner-profile-body">
-        <div class="section-tag" style="margin-bottom:14px">Informations</div>
-        <div class="info-grid">
-          <div class="info-item">
-            <div class="info-label">Téléphone</div>
-            <div class="info-value">{{ $owner->phone ?? '—' }}</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Inscription</div>
-            <div class="info-value">{{ $owner->created_at->format('d/m/Y') }}</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Dernière connexion</div>
-            <div class="info-value">
-              {{ $owner->last_login_at ? $owner->last_login_at->diffForHumans() : '—' }}
-            </div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Auberges</div>
-            <div class="info-value">
-              <span class="badge badge-teal">🏨 {{ $owner->hostels->count() }}</span>
-            </div>
-          </div>
-          @if($owner->country ?? false)
-          <div class="info-item full">
-            <div class="info-label">Pays</div>
-            <div class="info-value">{{ $owner->country }}</div>
-          </div>
-          @endif
-        </div>
-      </div>
-    </div>
+    <form method="POST" action="{{ route('super-admin.owners.destroy', $owner) }}"
+          onsubmit="return confirm('Supprimer définitivement ce propriétaire et tous ses hostels ?')">
+      @csrf @method('DELETE')
+      <button type="submit" class="btn btn-danger">🗑 Supprimer de la plateforme</button>
+    </form>
 
-    {{-- Statistiques rapides --}}
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">📊 Statistiques</div>
-      </div>
-      <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--cream);border-radius:10px;border:1px solid var(--border)">
-          <div style="font-size:0.85rem;color:var(--gray)">Total auberges</div>
-          <div style="font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;color:var(--charcoal)">
-            {{ $owner->hostels->count() }}
-          </div>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--cream);border-radius:10px;border:1px solid var(--border)">
-          <div style="font-size:0.85rem;color:var(--gray)">Auberges actives</div>
-          <div style="font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;color:#16A34A">
-            {{ $owner->hostels->where('is_active', true)->count() }}
-          </div>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--cream);border-radius:10px;border:1px solid var(--border)">
-          <div style="font-size:0.85rem;color:var(--gray)">Ancienneté</div>
-          <div style="font-size:0.88rem;font-weight:600;color:var(--teal-dark)">
-            {{ $owner->created_at->diffForHumans() }}
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  {{-- ── Colonne droite : Auberges ── --}}
-  <div>
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">🏨 Auberges de {{ $owner->name }}</div>
-        <span class="badge badge-admin">{{ $owner->hostels->count() }} au total</span>
-      </div>
-      <div class="card-body" style="padding:16px">
-
-        @if($owner->hostels->isEmpty())
-        <div class="empty-state" style="padding:40px 20px">
-          <div class="empty-state-icon">🏗</div>
-          <h3>Aucune auberge</h3>
-          <p>Ce propriétaire n'a pas encore créé d'établissement.</p>
-        </div>
-        @else
-        <div class="hostel-list">
-          @foreach($owner->hostels as $hostel)
-          <div class="hostel-item">
-            <div class="hostel-item-left">
-              <div class="hostel-icon">🏨</div>
-              <div>
-                <div class="hostel-name">{{ $hostel->name }}</div>
-                <div class="hostel-city">
-                  {{ $hostel->city ?? '' }}{{ ($hostel->city && $hostel->country) ? ', ' : '' }}{{ $hostel->country ?? '' }}
-                  @if(!$hostel->city && !$hostel->country)
-                    <span style="color:var(--gray-light)">Adresse non renseignée</span>
-                  @endif
-                </div>
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              @if($hostel->is_active ?? true)
-                <span class="badge badge-green">Actif</span>
-              @else
-                <span class="badge badge-red">Suspendu</span>
-              @endif
-              <a href="{{ route('super-admin.hostels.show', $hostel) }}"
-                 class="btn btn-outline btn-sm">Voir →</a>
-              <form method="POST" action="{{ route('super-admin.hostels.toggle', $hostel) }}">
-                @csrf @method('PATCH')
-                <button type="submit"
-                        class="btn btn-sm {{ ($hostel->is_active ?? true) ? 'btn-danger' : 'btn-teal' }}">
-                  {{ ($hostel->is_active ?? true) ? '⏸' : '▶' }}
-                </button>
-              </form>
-            </div>
-          </div>
-          @endforeach
-        </div>
-        @endif
-
-      </div>
-
-      {{-- Footer avec action rapide --}}
-      @if($owner->hostels->isNotEmpty())
-      <div class="card-footer-bar" style="padding:14px 16px;border-top:1px solid var(--border);background:var(--cream)">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <span style="font-size:0.78rem;color:var(--gray-light)">
-            {{ $owner->hostels->where('is_active', true)->count() }} actives sur {{ $owner->hostels->count() }}
-          </span>
-          <a href="{{ route('super-admin.hostels.index') }}" class="btn btn-outline btn-sm">
-            Voir toutes les auberges →
-          </a>
-        </div>
-      </div>
-      @endif
-
-    </div>
-
-    {{-- Zone danger ══ --}}
-    <div class="card" style="margin-top:1.2rem;border-color:rgba(239,68,68,0.2);background:rgba(255,255,255,0.8)">
-      <div class="card-header" style="border-color:rgba(239,68,68,0.15)">
-        <div class="card-title" style="color:#DC2626">⚠️ Zone dangereuse</div>
-      </div>
-      <div class="card-body">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-          <div>
-            <div style="font-size:0.88rem;font-weight:600;color:var(--charcoal);margin-bottom:3px">
-              Supprimer ce propriétaire
-            </div>
-            <div style="font-size:0.78rem;color:var(--gray-light)">
-              Action irréversible — toutes les données associées seront perdues
-            </div>
-          </div>
-          <button type="button"
-                  class="btn btn-danger"
-                  onclick="openConfirm(
-                    '{{ route('super-admin.owners.destroy', $owner) }}',
-                    'Supprimer {{ addslashes($owner->name) }}',
-                    'Cette suppression est définitive et inclut toutes les auberges et données associées. Confirmez ?'
-                  )">
-            🗑 Supprimer définitivement
-          </button>
-        </div>
-      </div>
-    </div>
-
+    <a href="{{ route('super-admin.owners.index') }}" class="btn btn-secondary">← Retour</a>
   </div>
 </div>
 
 @endsection
-
-@push('styles')
-<style>
-@media(max-width:900px){
-  div[style*="grid-template-columns:1fr 1.4fr"] {
-    grid-template-columns:1fr !important;
-  }
-}
-</style>
-@endpush

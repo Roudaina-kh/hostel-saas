@@ -26,11 +26,25 @@
 <body class="min-h-screen flex items-center justify-center p-6">
     <div class="bg-login"></div>
 
+    {{-- ✅ Bouton retour accueil — à l'intérieur du body --}}
+    <a href="{{ url('/') }}"
+       style="position:fixed;top:20px;left:24px;z-index:999;display:flex;align-items:center;gap:8px;
+              background:rgba(255,255,255,0.95);border:1px solid #E8DDD0;border-radius:24px;
+              padding:8px 16px 8px 10px;text-decoration:none;font-size:0.82rem;font-weight:600;
+              color:#2C2C2C;box-shadow:0 4px 16px rgba(0,0,0,0.08);backdrop-filter:blur(8px);"
+       onmouseover="this.style.borderColor='#FF6B47';this.style.color='#FF6B47'"
+       onmouseout="this.style.borderColor='#E8DDD0';this.style.color='#2C2C2C'">
+        <img src="{{ asset('images/13.png') }}" alt="HostelFlow"
+             style="height:28px;width:auto;object-fit:contain" onerror="this.style.display='none'">
+        Accueil
+    </a>
+
     <div class="max-w-[440px] w-full fade-up">
 
         <div class="text-center mb-8">
             <div class="inline-flex items-center justify-center p-4 bg-white rounded-3xl shadow-xl mb-6 ring-1 ring-slate-200">
-                <img src="{{ asset('images/logo.jpg') }}" alt="HostelFlow" class="w-16 h-16 object-cover rounded-2xl">
+                <img src="{{ asset('images/13.png') }}" alt="HostelFlow" class="h-14 w-auto object-contain"
+                     onerror="this.style.display='none'">
             </div>
             <h1 class="text-3xl font-extrabold text-white tracking-tight mb-2">Espace Équipe</h1>
             <p class="text-slate-400 font-medium">Manager · Staff · Financial</p>
@@ -92,5 +106,6 @@
             <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">HostelFlow © 2026</p>
         </div>
     </div>
+
 </body>
 </html>

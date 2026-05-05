@@ -15,7 +15,15 @@ class Hostel extends Model
         'city',
         'country',
         'status',
+        'is_active', // ✅ ajouté
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean', // ✅ ajouté
+        ];
+    }
 
     public function owner()
     {
@@ -35,16 +43,10 @@ class Hostel extends Model
         return $this->hasMany(Room::class);
     }
 
-    // ⚠️ beds() supprimé : beds n'a pas hostel_id
-    // Accès via : $hostel->rooms->each->beds
-
     public function tentSpaces()
     {
         return $this->hasMany(TentSpace::class);
     }
-
-    // ⚠️ taxSetting() supprimé : table dépréciée Sprint 1
-    // Remplacée par taxes() ci-dessous
 
     public function inventoryBlocks()
     {
@@ -70,8 +72,9 @@ class Hostel extends Model
     {
         return $this->hasMany(ExtraStockMovement::class);
     }
+
     public function exchangeRates()
-{
-    return $this->hasMany(ExchangeRate::class);
-}
+    {
+        return $this->hasMany(ExchangeRate::class);
+    }
 }

@@ -29,6 +29,12 @@ class HostelSelected
             return redirect()->route('onboarding.create')
                 ->with('error', 'Hostel introuvable.');
         }
+        // 🔒 Hostel désactivé par le Super Admin
+if ($hostel->is_active === false) {
+    session()->forget('hostel_id');
+    return redirect()->route('hostels.index')
+        ->with('error', '🚫 Ce hostel a été désactivé par l\'administrateur.');
+}
 
         view()->share('activeHostel', $hostel);
         view()->share('ownerHostels', $owner->hostels()->get());

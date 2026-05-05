@@ -3,7 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\OwnerAuthController;
-use App\Http\Controllers\Auth\SuperAdminAuthController;
 use App\Http\Controllers\Auth\UserAuthController;
 use App\Http\Controllers\Auth\OwnerRegisterController;
 use App\Http\Controllers\HostelController;
@@ -22,6 +21,8 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\SuperAdminOwnerController;
 use App\Http\Controllers\SuperAdmin\SuperAdminHostelController;
+use App\Http\Controllers\SuperAdmin\SuperAdminAuthController;
+use App\Http\Controllers\SuperAdmin\SuperAdminManagerController;
 use App\Http\Controllers\Manager\ManagerDashboardController;
 use App\Http\Controllers\Manager\ManagerRoomController;
 use App\Http\Controllers\Manager\ManagerTaxController;
@@ -35,9 +36,12 @@ use App\Http\Controllers\Reservation\CreateReservationController;
 use App\Http\Controllers\Reservation\ManagerReservationController;
 
 // ═══════════════════════════════════════════════════════
-// LANDING
+// LANDING & CONTACT (routes publiques)
 // ═══════════════════════════════════════════════════════
 Route::get('/', [App\Http\Controllers\LandingController::class, 'index'])->name('landing');
+
+Route::post('/contact', [\App\Http\Controllers\ContactRequestController::class, 'store'])
+    ->name('contact.store');
 
 // ═══════════════════════════════════════════════════════
 // OWNER AUTH
@@ -50,26 +54,37 @@ Route::middleware('auth:owner')->group(function () {
 });
 
 // ═══════════════════════════════════════════════════════
-// SUPER ADMIN AUTH
+// SUPER ADMIN
 // ═══════════════════════════════════════════════════════
 Route::prefix('super-admin')->name('super-admin.')->group(function () {
 
     Route::middleware('guest:super_admin')->group(function () {
-        Route::get('/login', [SuperAdminAuthController::class, 'create'])->name('login');
+        Route::get('/login',  [SuperAdminAuthController::class, 'create'])->name('login');
         Route::post('/login', [SuperAdminAuthController::class, 'store'])->name('login.store');
     });
 
     Route::middleware('auth:super_admin')->group(function () {
         Route::post('/logout', [SuperAdminAuthController::class, 'destroy'])->name('logout');
+
         Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
-        Route::get('/owners', [SuperAdminOwnerController::class, 'index'])->name('owners.index');
-        Route::get('/owners/{owner}', [SuperAdminOwnerController::class, 'show'])->name('owners.show');
-        Route::patch('/owners/{owner}/toggle', [SuperAdminOwnerController::class, 'toggle'])->name('owners.toggle');
-        Route::delete('/owners/{owner}', [SuperAdminOwnerController::class, 'destroy'])->name('owners.destroy');
-        Route::get('/hostels', [SuperAdminHostelController::class, 'index'])->name('hostels.index');
-        Route::get('/hostels/{hostel}', [SuperAdminHostelController::class, 'show'])->name('hostels.show');
+
+        // Propriétaires
+        Route::get('/owners',                    [SuperAdminOwnerController::class, 'index'])->name('owners.index');
+        Route::get('/owners/create',             [SuperAdminOwnerController::class, 'create'])->name('owners.create');
+        Route::post('/owners',                   [SuperAdminOwnerController::class, 'store'])->name('owners.store');
+        Route::get('/owners/{owner}',            [SuperAdminOwnerController::class, 'show'])->name('owners.show');
+        Route::patch('/owners/{owner}/toggle',   [SuperAdminOwnerController::class, 'toggle'])->name('owners.toggle');
+        Route::delete('/owners/{owner}',         [SuperAdminOwnerController::class, 'destroy'])->name('owners.destroy');
+
+        // Hostels
+        Route::get('/hostels',                   [SuperAdminHostelController::class, 'index'])->name('hostels.index');
+        Route::get('/hostels/{hostel}',          [SuperAdminHostelController::class, 'show'])->name('hostels.show');
         Route::patch('/hostels/{hostel}/toggle', [SuperAdminHostelController::class, 'toggle'])->name('hostels.toggle');
-        Route::delete('/hostels/{hostel}', [SuperAdminHostelController::class, 'destroy'])->name('hostels.destroy');
+        Route::delete('/hostels/{hostel}',       [SuperAdminHostelController::class, 'destroy'])->name('hostels.destroy');
+
+        // Managers
+        Route::get('/managers',                  [SuperAdminManagerController::class, 'index'])->name('managers.index');
+        Route::patch('/managers/{user}/toggle',  [SuperAdminManagerController::class, 'toggle'])->name('managers.toggle');
     });
 });
 
@@ -79,7 +94,7 @@ Route::prefix('super-admin')->name('super-admin.')->group(function () {
 Route::prefix('user')->name('user.')->group(function () {
 
     Route::middleware('guest:user')->group(function () {
-        Route::get('/login', [UserAuthController::class, 'create'])->name('login');
+        Route::get('/login',  [UserAuthController::class, 'create'])->name('login');
         Route::post('/login', [UserAuthController::class, 'store'])->name('login.store');
     });
 
@@ -144,24 +159,24 @@ Route::middleware('auth:owner')->group(function () {
         Route::resource('exchange-rates', ExchangeRateController::class)
             ->only(['index', 'create', 'store', 'show']);
 
-        // ── Réservations OWNER ────────────────────────────────────────────
-        // ⚠️ Routes statiques AVANT la route paramétrée /{id}
-        Route::get('/reservations',                  [CreateReservationController::class, 'index'])->name('reservations.index');
-        Route::get('/reservations/create',           [CreateReservationController::class, 'create'])->name('reservations.create');
-        Route::post('/reservations',                 [CreateReservationController::class, 'store'])->name('reservations.store');
-        Route::get('/reservations/available-units',  [CreateReservationController::class, 'availableUnits'])->name('reservations.available-units');
-        Route::post('/reservations/check-password',  [CreateReservationController::class, 'checkPassword'])->name('reservations.check-password');
-        Route::get('/reservations/{id}/edit',        [CreateReservationController::class, 'edit'])->name('reservations.edit');
-        Route::put('/reservations/{id}',             [CreateReservationController::class, 'update'])->name('reservations.update');
-        Route::delete('/reservations/{id}',          [CreateReservationController::class, 'destroy'])->name('reservations.destroy');
+        // Demandes clients
+        Route::get('/contact-requests', [\App\Http\Controllers\ContactRequestController::class, 'index'])->name('contact-requests.index');
+        Route::patch('/contact-requests/{contactRequest}/mark-read', [\App\Http\Controllers\ContactRequestController::class, 'markRead'])->name('contact-requests.mark-read');
+        Route::patch('/contact-requests/{contactRequest}/mark-replied', [\App\Http\Controllers\ContactRequestController::class, 'markReplied'])->name('contact-requests.mark-replied');
+        Route::delete('/contact-requests/{contactRequest}', [\App\Http\Controllers\ContactRequestController::class, 'destroy'])->name('contact-requests.destroy');
 
-        // ── Payments OWNER ────────────────────────────────────────────────
-        // ⚠️ Route statique /payments/reservation/{id}/people AVANT resource
-        //    pour éviter que {payment} ne capture "reservation"
-        Route::get('/payments/reservation/{reservation}/people',
-            [PaymentController::class, 'people']
-        )->name('payments.people');
+        // Réservations OWNER
+        Route::get('/reservations',                 [CreateReservationController::class, 'index'])->name('reservations.index');
+        Route::get('/reservations/create',          [CreateReservationController::class, 'create'])->name('reservations.create');
+        Route::post('/reservations',                [CreateReservationController::class, 'store'])->name('reservations.store');
+        Route::get('/reservations/available-units', [CreateReservationController::class, 'availableUnits'])->name('reservations.available-units');
+        Route::post('/reservations/check-password', [CreateReservationController::class, 'checkPassword'])->name('reservations.check-password');
+        Route::get('/reservations/{id}/edit',       [CreateReservationController::class, 'edit'])->name('reservations.edit');
+        Route::put('/reservations/{id}',            [CreateReservationController::class, 'update'])->name('reservations.update');
+        Route::delete('/reservations/{id}',         [CreateReservationController::class, 'destroy'])->name('reservations.destroy');
 
+        // Payments OWNER
+        Route::get('/payments/reservation/{reservation}/people', [PaymentController::class, 'people'])->name('payments.people');
         Route::resource('payments', PaymentController::class);
 
     }); // fin hostel.selected
@@ -175,10 +190,15 @@ Route::prefix('manager')->name('manager.')->middleware(['auth:user', 'manager.au
     Route::get('/dashboard', [ManagerDashboardController::class, 'index'])->name('dashboard');
     Route::resource('inventory-blocks', ManagerInventoryBlockController::class)->except(['show']);
     Route::resource('rooms', ManagerRoomController::class)->except(['show']);
-    Route::resource('exchange-rates', ManagerExchangeRateController::class)
-        ->only(['index', 'create', 'store', 'show']);
+    Route::resource('exchange-rates', ManagerExchangeRateController::class)->only(['index', 'create', 'store', 'show']);
 
-    // ── Réservations Manager ──────────────────────────────────────────────
+    // Demandes clients
+    Route::get('/contact-requests', [\App\Http\Controllers\ContactRequestController::class, 'index'])->name('contact-requests.index');
+    Route::patch('/contact-requests/{contactRequest}/mark-read', [\App\Http\Controllers\ContactRequestController::class, 'markRead'])->name('contact-requests.mark-read');
+    Route::patch('/contact-requests/{contactRequest}/mark-replied', [\App\Http\Controllers\ContactRequestController::class, 'markReplied'])->name('contact-requests.mark-replied');
+    Route::delete('/contact-requests/{contactRequest}', [\App\Http\Controllers\ContactRequestController::class, 'destroy'])->name('contact-requests.destroy');
+
+    // Réservations Manager
     Route::get('/reservations',                 [ManagerReservationController::class, 'index'])->name('reservations.index');
     Route::get('/reservations/create',          [ManagerReservationController::class, 'create'])->name('reservations.create');
     Route::post('/reservations',                [ManagerReservationController::class, 'store'])->name('reservations.store');
@@ -187,31 +207,25 @@ Route::prefix('manager')->name('manager.')->middleware(['auth:user', 'manager.au
     Route::get('/reservations/{id}/edit',       [ManagerReservationController::class, 'edit'])->name('reservations.edit');
     Route::put('/reservations/{id}',            [ManagerReservationController::class, 'update'])->name('reservations.update');
     Route::delete('/reservations/{id}',         [ManagerReservationController::class, 'destroy'])->name('reservations.destroy');
-    Route::get('/payments/reservation/{reservation}/people',
-    [\App\Http\Controllers\Manager\ManagerPaymentController::class, 'people']
-)->name('payments.people');
- 
-Route::resource('payments', \App\Http\Controllers\Manager\ManagerPaymentController::class);
 
-    // ── Pricing ───────────────────────────────────────────────────────────
+    // Payments Manager
+    Route::get('/payments/reservation/{reservation}/people', [\App\Http\Controllers\Manager\ManagerPaymentController::class, 'people'])->name('payments.people');
+    Route::resource('payments', \App\Http\Controllers\Manager\ManagerPaymentController::class);
+
+    // Pricing
     $pricingData = function () {
-        $hostelId   = session('staff_hostel_id');
-        $prices     = \App\Models\Price::where('hostel_id', $hostelId)->with(['priceable', 'taxes'])->whereNotNull('priceable_type')->latest()->get();
-        $rooms      = \App\Models\Room::where('hostel_id', $hostelId)->get();
-        $tentSpaces = \App\Models\TentSpace::where('hostel_id', $hostelId)->get();
-        $extras     = \App\Models\Extra::where('hostel_id', $hostelId)->get();
-        $taxes      = \App\Models\Tax::where('hostel_id', $hostelId)->where('is_enabled', true)->get();
+        $hostelId       = session('staff_hostel_id');
+        $prices         = \App\Models\Price::where('hostel_id', $hostelId)->with(['priceable', 'taxes'])->whereNotNull('priceable_type')->latest()->get();
+        $rooms          = \App\Models\Room::where('hostel_id', $hostelId)->get();
+        $tentSpaces     = \App\Models\TentSpace::where('hostel_id', $hostelId)->get();
+        $extras         = \App\Models\Extra::where('hostel_id', $hostelId)->get();
+        $taxes          = \App\Models\Tax::where('hostel_id', $hostelId)->where('is_enabled', true)->get();
         $currentManager = (object) ['can_manage_pricing' => true];
         return compact('hostelId', 'currentManager', 'prices', 'rooms', 'tentSpaces', 'extras', 'taxes');
     };
 
-    Route::get('/pricing', function () use ($pricingData) {
-        return view('manager.pricing.index', $pricingData());
-    })->name('pricing.index');
-
-    Route::get('/pricing/create', function () use ($pricingData) {
-        return view('manager.pricing.create', $pricingData());
-    })->name('pricing.create');
+    Route::get('/pricing', fn() => view('manager.pricing.index', $pricingData()))->name('pricing.index');
+    Route::get('/pricing/create', fn() => view('manager.pricing.create', $pricingData()))->name('pricing.create');
 
     Route::post('/pricing', function (\Illuminate\Http\Request $request) {
         $hostelId = session('staff_hostel_id');
@@ -268,7 +282,7 @@ Route::resource('payments', \App\Http\Controllers\Manager\ManagerPaymentControll
         return redirect()->route('manager.pricing.index')->with('success', 'Tarif supprimé.');
     })->name('pricing.destroy');
 
-    // ── Beds ──────────────────────────────────────────────────────────────
+    // Beds
     Route::get('/beds', function () {
         $hostelId = session('staff_hostel_id');
         $beds  = \App\Models\Bed::whereHas('room', fn($q) => $q->where('hostel_id', $hostelId))->with('room')->get();
@@ -296,11 +310,11 @@ Route::resource('payments', \App\Http\Controllers\Manager\ManagerPaymentControll
         return redirect()->route('manager.beds.index')->with('success', 'Lit supprimé.');
     })->name('beds.destroy');
 
-    // ── Taxes ─────────────────────────────────────────────────────────────
+    // Taxes
     Route::get('/taxes', [ManagerTaxController::class, 'index'])->name('taxes.index');
     Route::put('/taxes', [ManagerTaxController::class, 'update'])->name('taxes.update');
 
-    // ── Staff ─────────────────────────────────────────────────────────────
+    // Staff
     Route::get('/staff', function () {
         $hostelId = session('staff_hostel_id');
         $staff = \App\Models\User::whereHas('hostels', fn($q) => $q->where('hostels.id', $hostelId))
@@ -338,7 +352,7 @@ Route::resource('payments', \App\Http\Controllers\Manager\ManagerPaymentControll
         return redirect()->route('manager.staff.index')->with('success', 'Membre retiré.');
     })->name('staff.destroy');
 
-    // ── Settings ──────────────────────────────────────────────────────────
+    // Settings
     Route::get('/settings', function () {
         $user     = Auth::guard('user')->user();
         $hostelId = session('staff_hostel_id');
@@ -375,7 +389,7 @@ Route::prefix('staff')->name('staff.')->middleware('auth:user')->group(function 
     Route::get('/cash-shifts', [CashShiftController::class, 'index'])->name('cash-shifts.index');
     Route::post('/cash-shifts/open', [CashShiftController::class, 'open'])->name('cash-shifts.open');
 
-    // ── Réservations Staff ────────────────────────────────────────────────
+    // Réservations Staff
     Route::get('/reservations',                 [ManagerReservationController::class, 'index'])->name('reservations.index');
     Route::get('/reservations/available-units', [ManagerReservationController::class, 'availableUnits'])->name('reservations.available-units');
     Route::post('/reservations/check-password', [ManagerReservationController::class, 'checkPassword'])->name('reservations.check-password');
@@ -384,13 +398,12 @@ Route::prefix('staff')->name('staff.')->middleware('auth:user')->group(function 
     Route::get('/reservations/{id}/edit',       [ManagerReservationController::class, 'edit'])->name('reservations.edit');
     Route::put('/reservations/{id}',            [ManagerReservationController::class, 'update'])->name('reservations.update');
     Route::delete('/reservations/{id}',         [ManagerReservationController::class, 'destroy'])->name('reservations.destroy');
-    Route::get('/payments/reservation/{reservation}/people',
-    [\App\Http\Controllers\Staff\StaffPaymentController::class, 'people']
-)->name('payments.people');
- 
-Route::get('/payments',          [\App\Http\Controllers\Staff\StaffPaymentController::class, 'index'])->name('payments.index');
-Route::get('/payments/create',   [\App\Http\Controllers\Staff\StaffPaymentController::class, 'create'])->name('payments.create');
-Route::post('/payments',         [\App\Http\Controllers\Staff\StaffPaymentController::class, 'store'])->name('payments.store');
-Route::get('/payments/{payment}',[\App\Http\Controllers\Staff\StaffPaymentController::class, 'show'])->name('payments.show');
+
+    // Payments Staff
+    Route::get('/payments/reservation/{reservation}/people', [\App\Http\Controllers\Staff\StaffPaymentController::class, 'people'])->name('payments.people');
+    Route::get('/payments',           [\App\Http\Controllers\Staff\StaffPaymentController::class, 'index'])->name('payments.index');
+    Route::get('/payments/create',    [\App\Http\Controllers\Staff\StaffPaymentController::class, 'create'])->name('payments.create');
+    Route::post('/payments',          [\App\Http\Controllers\Staff\StaffPaymentController::class, 'store'])->name('payments.store');
+    Route::get('/payments/{payment}', [\App\Http\Controllers\Staff\StaffPaymentController::class, 'show'])->name('payments.show');
 
 }); // fin staff

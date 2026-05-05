@@ -71,8 +71,10 @@ body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--ch
 .form-input:focus,.form-select:focus,.form-textarea:focus {
   border-color:var(--teal); box-shadow:0 0 0 3px rgba(42,191,191,0.12);
 }
+.form-input.error { border-color:var(--coral); }
 .form-textarea { resize:vertical; min-height:90px; }
 .form-select { appearance:none; cursor:pointer; }
+.field-error { font-size:0.72rem; color:var(--coral); margin-top:2px; display:none; }
 .btn-submit {
   width:100%; padding:14px; margin-top:10px;
   background:var(--coral); color:#fff; border:none; border-radius:14px;
@@ -91,6 +93,17 @@ body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--ch
 }
 .btn-submit-teal:hover { background:var(--teal-dark); transform:translateY(-2px); }
 
+/* Team login button */
+.btn-team-login {
+  width:100%; padding:13px; margin-top:10px;
+  background:rgba(42,191,191,0.1); color:var(--teal-dark);
+  border:1.5px solid var(--teal); border-radius:14px;
+  font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:600;
+  cursor:pointer; transition:all 0.25s; text-decoration:none;
+  display:block; text-align:center;
+}
+.btn-team-login:hover { background:var(--teal); color:#fff; transform:translateY(-2px); }
+
 /* Login */
 .login-box { max-width:440px; }
 .login-divider { display:flex; align-items:center; gap:12px; margin:18px 0; }
@@ -102,6 +115,11 @@ body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--ch
   background:#FEE2E2; border:1px solid #FECACA; color:#DC2626;
   padding:10px 14px; border-radius:10px; font-size:0.82rem; margin-bottom:14px;
   display:none;
+}
+.form-success {
+  background:#D1FAE5; border:1px solid #6EE7B7; color:#065F46;
+  padding:14px; border-radius:12px; font-size:0.9rem; margin-bottom:14px;
+  display:none; text-align:center; font-weight:600;
 }
 
 /* Blog modal */
@@ -124,31 +142,15 @@ nav {
 }
 @keyframes slideDown{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}
 
-/* ── Logo : visible, claire, cohérente ── */
-.logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
-.logo-dot { width:8px; height:8px; background:var(--teal); border-radius:50%; animation:pulse 2s ease infinite; flex-shrink:0; }
-@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:0.6}}
-
-.logo-img-wrap {
-  height:48px;
+/* ── Logo navbar ── */
+.nav-logo-link {
   display:flex; align-items:center;
-  background:var(--charcoal);
-  border-radius:10px;
-  padding:5px 12px;
-  box-shadow:0 2px 10px rgba(44,44,44,0.15);
+  text-decoration:none; cursor:pointer;
 }
-.logo-img-wrap img {
-  height:36px; width:auto;
-  object-fit:contain;
-  display:block;
-  /* si logo sur fond sombre sinon retirer le filter */
-  filter:brightness(0) invert(1);
+.nav-logo-img {
+  height:44px; width:auto;
+  object-fit:contain; display:block;
 }
-.logo-text-fallback {
-  font-family:'Fraunces',serif; font-size:1.5rem; font-weight:700; color:#fff;
-  white-space:nowrap;
-}
-.logo-text-fallback span { color:var(--coral); }
 
 .nav-links { display:flex; align-items:center; gap:0; list-style:none; }
 .nav-links a {
@@ -177,7 +179,6 @@ nav {
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   padding:110px 2rem 70px; overflow:hidden;
 }
-/* ── CHANGEMENT IMAGE : first.jpg ── */
 .hero-bg-img {
   position:absolute; inset:0;
   background-image:url('{{ asset("images/first.jpg") }}');
@@ -210,6 +211,7 @@ h1 em { font-style:italic; color:var(--coral); animation:wiggle 3s 1.5s ease-in-
 @keyframes wiggle{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(1.5deg)}}
 .hero-sub { font-size:1.05rem; color:var(--gray); max-width:520px; margin:0 auto 2rem; line-height:1.7; animation:fadeUp 0.7s 0.5s both; }
 
+/* ── Photo héro remplacée ── */
 .hero-aventure-wrap {
   position:relative; width:100%; max-width:820px; margin:0 auto 2rem;
   border-radius:22px; overflow:hidden; height:300px;
@@ -299,8 +301,6 @@ h2 em { font-style:italic; color:var(--teal); }
 .card-img-wrap { width:100%; height:210px; overflow:hidden; position:relative; }
 .card-img-wrap img { width:100%; height:100%; object-fit:cover; transition:transform 0.55s cubic-bezier(0.25,0.46,0.45,0.94); display:block; }
 .offer-card:hover .card-img-wrap img { transform:scale(1.1); }
-.card-img-wrap::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,0.18) 0%,transparent 50%,rgba(42,191,191,0.12) 100%); opacity:0; transition:opacity 0.4s; }
-.offer-card:hover .card-img-wrap::after { opacity:1; }
 .card-badge { position:absolute; top:12px; left:12px; background:var(--coral); color:#fff; font-size:0.67rem; font-weight:700; padding:4px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:0.05em; z-index:1; }
 .card-badge.teal { background:var(--teal); }
 .card-body { padding:18px 20px 20px; }
@@ -338,12 +338,9 @@ h2 em { font-style:italic; color:var(--teal); }
 .dest-card:hover .dest-img { transform:scale(1.12); }
 .dest-overlay { position:absolute; inset:0; background:linear-gradient(to top,rgba(20,20,20,0.68) 0%,transparent 55%); transition:background 0.35s; }
 .dest-card:hover .dest-overlay { background:linear-gradient(to top,rgba(20,20,20,0.78) 0%,rgba(20,20,20,0.12) 65%); }
-.dest-card::before { content:''; position:absolute; top:0; left:-100%; width:60%; height:100%; background:linear-gradient(to right,transparent,rgba(255,255,255,0.18),transparent); transition:left 0.5s ease; z-index:2; pointer-events:none; }
-.dest-card:hover::before { left:150%; }
 .dest-info { position:absolute; bottom:0; left:0; right:0; padding:16px 18px; z-index:3; }
-.dest-name { font-family:'Fraunces',serif; font-size:1.1rem; font-weight:600; color:#fff; line-height:1.2; transition:letter-spacing 0.3s; }
+.dest-name { font-family:'Fraunces',serif; font-size:1.1rem; font-weight:600; color:#fff; line-height:1.2; }
 .dest-card.large .dest-name { font-size:1.65rem; }
-.dest-card:hover .dest-name { letter-spacing:0.02em; }
 .dest-count { font-size:0.72rem; color:rgba(255,255,255,0.8); margin-top:3px; }
 
 /* ══ DEST LIST ══ */
@@ -361,7 +358,6 @@ h2 em { font-style:italic; color:var(--teal); }
   background:linear-gradient(140deg,#14393A 0%,#1A9999 50%,#2ABFBF 100%);
   padding:64px 56px; display:flex; align-items:center; justify-content:space-between; gap:2rem;
 }
-.adventure-inner::before { content:''; position:absolute; inset:0; background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/svg%3E"); }
 .adventure-text { position:relative; z-index:1; max-width:460px; }
 .adventure-text .section-tag { color:rgba(255,255,255,0.7); }
 .adventure-text .section-tag::before { background:rgba(255,255,255,0.5); }
@@ -380,32 +376,30 @@ h2 em { font-style:italic; color:var(--teal); }
 .adv-photo:hover { transform:translateY(-8px) !important; box-shadow:0 16px 40px rgba(0,0,0,0.3); }
 .adv-photo:hover img { transform:scale(1.08); }
 
+/* ══ SCROLL TO TOP ══ */
+.scroll-top-btn {
+  position:fixed; bottom:30px; right:30px; z-index:200;
+  width:44px; height:44px; border-radius:50%;
+  background:transparent; border:2px solid rgba(255,255,255,0.7);
+  color:#fff; font-size:1.2rem; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.3s; opacity:0; pointer-events:none;
+  box-shadow:0 4px 20px rgba(0,0,0,0.3);
+  backdrop-filter:blur(4px);
+}
+.scroll-top-btn.visible { opacity:1; pointer-events:all; }
+.scroll-top-btn:hover { background:rgba(255,255,255,0.15); border-color:#fff; transform:translateY(-3px); }
+
 /* ══ FOOTER ══ */
 footer { background:var(--charcoal); color:rgba(255,255,255,0.7); padding:60px 3rem 30px; }
 .footer-grid { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:3rem; max-width:1100px; margin:0 auto 3rem; }
-
-/* ── Logo footer : même style que navbar ── */
-.footer-logo-wrap {
-  display:flex; align-items:center; gap:10px; text-decoration:none; margin-bottom:12px;
-}
-.footer-logo-img {
-  height:44px;
-  background:rgba(255,255,255,0.1);
-  border-radius:10px;
-  padding:6px 12px;
-  display:flex; align-items:center;
-  border:1px solid rgba(255,255,255,0.15);
-}
-.footer-logo-img img {
-  height:32px; width:auto; object-fit:contain;
-  filter:brightness(0) invert(1);
-}
-.footer-logo-text { font-family:'Fraunces',serif; font-size:1.4rem; font-weight:700; color:#fff; }
-.footer-logo-text span { color:var(--coral); }
-
+.footer-brand { }
+.footer-logo-wrap { display:flex; align-items:center; gap:10px; text-decoration:none; margin-bottom:12px; }
+.footer-logo-img { display:flex; align-items:center; gap:10px; }
+.footer-logo-img img { height:36px; width:auto; object-fit:contain; filter:brightness(0) invert(1); }
+.footer-logo-name { font-family:'Fraunces',serif; font-size:1.4rem; font-weight:700; color:#fff; }
+.footer-logo-name span { color:var(--coral); }
 .footer-tagline { font-size:0.84rem; margin-top:12px; max-width:240px; line-height:1.75; }
-
-/* ── Réseaux sociaux : images réelles ── */
 .footer-social { display:flex; gap:10px; margin-top:1.5rem; flex-wrap:wrap; }
 .social-btn {
   width:42px; height:42px; border-radius:50%;
@@ -414,9 +408,8 @@ footer { background:var(--charcoal); color:rgba(255,255,255,0.7); padding:60px 3
   cursor:pointer; transition:all 0.25s; overflow:hidden; padding:9px;
   text-decoration:none;
 }
-.social-btn:hover { background:var(--coral); border-color:var(--coral); transform:scale(1.15) translateY(-2px); box-shadow:0 6px 16px rgba(255,107,71,0.4); }
+.social-btn:hover { background:var(--coral); border-color:var(--coral); transform:scale(1.15) translateY(-2px); }
 .social-btn img { width:100%; height:100%; object-fit:contain; filter:brightness(0) invert(1); display:block; }
-
 .footer-col-title { font-weight:700; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.1em; color:#fff; margin-bottom:1.2rem; }
 .footer-links { list-style:none; display:flex; flex-direction:column; gap:8px; }
 .footer-links a { font-size:0.82rem; color:rgba(255,255,255,0.6); text-decoration:none; transition:color 0.2s; }
@@ -442,68 +435,84 @@ footer { background:var(--charcoal); color:rgba(255,255,255,0.7); padding:60px 3
     <button class="modal-close" onclick="closeModal('modalReservation')">✕</button>
     <div class="modal-title">📋 Demande de réservation</div>
     <p class="modal-sub">Remplissez ce formulaire et notre équipe vous confirme sous 24h.</p>
-    <div class="form-grid">
-      <div class="form-group">
-        <label class="form-label">Prénom *</label>
-        <input class="form-input" type="text" placeholder="Jean">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Nom *</label>
-        <input class="form-input" type="text" placeholder="Dupont">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Email *</label>
-        <input class="form-input" type="email" placeholder="jean@email.com">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Téléphone</label>
-        <input class="form-input" type="tel" placeholder="+33 6 00 00 00 00">
-      </div>
-      <div class="form-group full">
-        <label class="form-label">Destination *</label>
-        <select class="form-select">
-          <option value="">-- Choisir une destination --</option>
-          <option>Paris</option><option>Amsterdam</option><option>Athens</option>
-          <option>Barcelona</option><option>Berlin</option><option>Brussels</option>
-          <option>Budapest</option><option>Dublin</option><option>Florence</option>
-          <option>Lisbon</option><option>London</option><option>Madrid</option>
-          <option>Milan</option><option>Munich</option><option>New York</option>
-          <option>Nice</option><option>Prague</option><option>Rome</option>
-          <option>Stockholm</option><option>Venice</option><option>Vienna</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Date d'arrivée *</label>
-        <input class="form-input" type="date">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Date de départ *</label>
-        <input class="form-input" type="date">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Nombre de voyageurs</label>
-        <select class="form-select">
-          <option>1 voyageur</option><option>2 voyageurs</option>
-          <option>3 voyageurs</option><option>4 voyageurs</option><option>5+</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Type de chambre</label>
-        <select class="form-select">
-          <option>Dortoir (lit)</option><option>Chambre privée</option>
-          <option>Chambre double</option><option>Suite familiale</option>
-        </select>
-      </div>
-      <div class="form-group full">
-        <label class="form-label">Message / Demandes spéciales</label>
-        <textarea class="form-textarea" placeholder="Précisez vos besoins, arrivée tardive, allergies alimentaires…"></textarea>
-      </div>
+
+    {{-- Message succès --}}
+    <div class="form-success" id="contactSuccess">
+      ✅ Votre demande a bien été envoyée ! Nous vous contacterons sous 24h.
     </div>
-    <button class="btn-submit" onclick="submitForm()">🚀 Envoyer ma demande</button>
+
+    {{-- Formulaire POST réel --}}
+    <form id="contactForm" method="POST" action="{{ route('contact.store') }}" novalidate>
+      @csrf
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Prénom *</label>
+          <input class="form-input" type="text" name="first_name" placeholder="Jean" id="cf_first_name">
+          <span class="field-error" id="err_first_name">Ce champ est requis</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nom *</label>
+          <input class="form-input" type="text" name="last_name" placeholder="Dupont" id="cf_last_name">
+          <span class="field-error" id="err_last_name">Ce champ est requis</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email *</label>
+          <input class="form-input" type="email" name="email" placeholder="jean@email.com" id="cf_email">
+          <span class="field-error" id="err_email">Email invalide</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Téléphone</label>
+          <input class="form-input" type="tel" name="phone" placeholder="+33 6 00 00 00 00">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Destination *</label>
+          <select class="form-select" name="destination" id="cf_destination">
+            <option value="">-- Choisir une destination --</option>
+            <option>Paris</option><option>Amsterdam</option><option>Athens</option>
+            <option>Barcelona</option><option>Berlin</option><option>Brussels</option>
+            <option>Budapest</option><option>Dublin</option><option>Florence</option>
+            <option>Lisbon</option><option>London</option><option>Madrid</option>
+            <option>Milan</option><option>Munich</option><option>New York</option>
+            <option>Nice</option><option>Prague</option><option>Rome</option>
+            <option>Stockholm</option><option>Venice</option><option>Vienna</option>
+          </select>
+          <span class="field-error" id="err_destination">Veuillez choisir une destination</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date d'arrivée *</label>
+          <input class="form-input" type="date" name="arrival_date" id="cf_arrival">
+          <span class="field-error" id="err_arrival">Ce champ est requis</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date de départ *</label>
+          <input class="form-input" type="date" name="departure_date" id="cf_departure">
+          <span class="field-error" id="err_departure">Ce champ est requis</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nombre de voyageurs</label>
+          <select class="form-select" name="travelers">
+            <option value="1">1 voyageur</option><option value="2">2 voyageurs</option>
+            <option value="3">3 voyageurs</option><option value="4">4 voyageurs</option><option value="5">5+</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type de chambre</label>
+          <select class="form-select" name="room_type">
+            <option>Dortoir (lit)</option><option>Chambre privée</option>
+            <option>Chambre double</option><option>Suite familiale</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Message / Demandes spéciales</label>
+          <textarea class="form-textarea" name="message" placeholder="Précisez vos besoins, arrivée tardive, allergies alimentaires…"></textarea>
+        </div>
+      </div>
+      <button type="button" class="btn-submit" onclick="submitContactForm()">🚀 Envoyer ma demande</button>
+    </form>
   </div>
 </div>
 
-{{-- ══ MODAL CONNEXION PROPRIÉTAIRE — Formulaire POST réel ══ --}}
+{{-- ══ MODAL CONNEXION PROPRIÉTAIRE ══ --}}
 <div class="modal-overlay" id="modalLogin">
   <div class="modal-box login-box">
     <button class="modal-close" onclick="closeModal('modalLogin')">✕</button>
@@ -514,7 +523,6 @@ footer { background:var(--charcoal); color:rgba(255,255,255,0.7); padding:60px 3
       <div class="login-error" style="display:block">{{ session('error') }}</div>
     @endif
 
-    {{-- Formulaire POST vers la vraie route Laravel --}}
     <form method="POST" action="{{ route('owner.login.store') }}" id="loginForm">
       @csrf
       <div class="form-grid">
@@ -540,8 +548,20 @@ footer { background:var(--charcoal); color:rgba(255,255,255,0.7); padding:60px 3
       <button type="submit" class="btn-submit">Se connecter →</button>
     </form>
 
-    <div class="login-divider"><span>Pas encore de compte ?</span></div>
-    <a href="{{ route('register') }}" class="btn-submit-teal">Créer un compte établissement</a>
+    {{-- ✅ Bouton connexion équipe --}}
+    <a href="{{ route('user.login') }}" class="btn-team-login">
+      👥 Connexion équipe (Manager / Staff / Financier)
+    </a>
+
+    {{-- Lien super admin discret --}}
+    <a href="{{ route('super-admin.login') }}"
+       style="display:block;text-align:center;font-size:0.75rem;color:rgba(44,44,44,0.35);
+              text-decoration:none;margin-top:14px;transition:color 0.2s;"
+       onmouseover="this.style.color='#7C3AED'"
+       onmouseout="this.style.color='rgba(44,44,44,0.35)'">
+      🛡 Espace Super Admin
+    </a>
+
   </div>
 </div>
 
@@ -556,56 +576,47 @@ footer { background:var(--charcoal); color:rgba(255,255,255,0.7); padding:60px 3
       <span>📅 18 avril 2026</span>
       <span>⏱ 8 min de lecture</span>
     </div>
-    <img class="blog-hero-img" src="{{ asset('images/aventure.jpg') }}" alt="Auberge Europe"
+    <img class="blog-hero-img" src="{{ asset('images/pexels-quang-nguyen-vinh-222549-6877998.jpg') }}" alt="Auberge Europe"
          onerror="this.style.background='linear-gradient(135deg,#2ABFBF,#FF6B47)';this.removeAttribute('src')">
     <div class="blog-content">
-      <p>L'Europe regorge d'auberges qui vont bien au-delà du simple lit en dortoir. Certaines sont nichées dans d'anciens palais, d'autres surplombent des canaux ou s'intègrent dans des forêts anciennes. Voici notre sélection des établissements qui ont marqué l'histoire du voyage indépendant.</p>
+      <p>L'Europe regorge d'auberges qui vont bien au-delà du simple lit en dortoir.</p>
       <h3>🏰 1. Le Chateau Hostel — Prague</h3>
-      <p>Installé dans un bâtiment du XVIIe siècle à deux pas du château de Prague, cet hostel propose des plafonds peints à la fresque et des dortoirs avec vue sur les toits dorés de la vieille ville.</p>
+      <p>Installé dans un bâtiment du XVIIe siècle à deux pas du château de Prague.</p>
       <h3>🌊 2. Canal Garden Hostel — Amsterdam</h3>
-      <p>Les fenêtres donnent directement sur le Prinsengracht. Le vélo est inclus dans la nuitée — une nécessité dans cette ville.</p>
-      <h3>⛵ 3. The Rooftop — Barcelone</h3>
-      <p>Terrasse à ciel ouvert sur les toits du quartier gothique, bar à cocktails, yoga au lever du soleil face à la Méditerranée.</p>
-      <h3>🌿 4. The Forest Lodge — Munich</h3>
-      <p>À 20 minutes du centre, ce lodge en bois propose des chambres qui sentent le pin et un sauna traditionnel.</p>
-      <h3>🎨 5. Art Squat Hostel — Berlin</h3>
-      <p>Chaque chambre est peinte par un artiste différent. Les couloirs sont des galeries éphémères.</p>
-      <p style="margin-top:1.5rem;padding:16px;background:var(--sand);border-radius:12px;font-size:0.85rem;color:var(--gray)">
-        <strong>💡 Conseil HostelFlow :</strong> Réservez au moins 3 semaines à l'avance pour les auberges premium en haute saison (juillet–août).
-      </p>
+      <p>Les fenêtres donnent directement sur le Prinsengracht. Le vélo est inclus.</p>
     </div>
   </div>
 </div>
 
 {{-- ══ NAVBAR ══ --}}
 <nav>
-  <a href="{{ url('/') }}" class="logo">
-    <div class="logo-dot"></div>
-    <div class="logo-img-wrap">
-      <img src="{{ asset('images/logo2.png') }}" alt="HostelFlow"
-           onerror="this.parentElement.innerHTML='<span class=\'logo-text-fallback\'>Hostel<span>Flow</span></span>'">
-    </div>
+  {{-- Logo cliquable → retour en haut de page --}}
+  <a href="{{ url('/') }}" class="nav-logo-link">
+    <img src="{{ asset('images/13.png') }}" alt="HostelFlow" class="nav-logo-img"
+         onerror="this.style.display='none'">
   </a>
+
   <ul class="nav-links">
     <li><a href="{{ url('/') }}">Accueil</a></li>
-    <li><a href="#">Groupes 10+</a></li>
-    <li><a href="#">Guides</a></li>
     <li><a href="#" onclick="openModal('modalBlog'); return false;">Blog des routards</a></li>
-    <li><a href="#">Ajouter votre établissement</a></li>
-    <li><a href="#" onclick="openModal('modalReservation'); return false;">Extranet</a></li>
+    <li><a href="#offres">Meilleures offres</a></li>
   </ul>
+
   <div class="nav-actions">
     <button class="btn-ghost" onclick="openModal('modalLogin')">Se connecter</button>
     <button class="btn-primary" onclick="openModal('modalReservation')">S'inscrire</button>
   </div>
 </nav>
 
-{{-- Si des erreurs de validation viennent du formulaire de login, ouvrir le modal --}}
 @if($errors->any() || session('error'))
 <script>document.addEventListener('DOMContentLoaded',()=>openModal('modalLogin'));</script>
 @endif
 
-{{-- ══ HERO — image first.jpg ══ --}}
+@if(session('contact_success'))
+<script>document.addEventListener('DOMContentLoaded',()=>{openModal('modalReservation');document.getElementById('contactSuccess').style.display='block';document.getElementById('contactForm').style.display='none';});</script>
+@endif
+
+{{-- ══ HERO ══ --}}
 <section class="hero">
   <div class="hero-bg-img"></div>
   <div class="hero-bg-overlay"></div>
@@ -613,21 +624,17 @@ footer { background:var(--charcoal); color:rgba(255,255,255,0.7); padding:60px 3
   <div class="blob blob-2"></div>
   <div class="blob blob-3"></div>
   <div class="dots-grid">
-    <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
-    <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
-    <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
-    <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
-    <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    @for($i=0;$i<40;$i++)<div class="dot"></div>@endfor
   </div>
-  <img src="{{ asset('images/dessin.jpg') }}" alt="" class="dessin-float" onerror="this.style.display='none'">
 
   <div class="hero-content">
     <div class="hero-badge">✦ Plus de 25 000 auberges dans 180 pays</div>
     <h1>Découvrez des lieux <em>populaires</em><br>pour des aventures <em>inoubliables</em></h1>
     <p class="hero-sub">Réservez des auberges de jeunesse uniques, rencontrez des voyageurs du monde entier et créez des souvenirs qui durent toute une vie.</p>
 
+    {{-- ✅ Photo remplacée --}}
     <div class="hero-aventure-wrap">
-      <img src="{{ asset('images/aventure.jpg') }}" alt="Aventure"
+      <img src="{{ asset('images/pexels-quang-nguyen-vinh-222549-6877998.jpg') }}" alt="Aventure"
            onerror="this.parentElement.style.background='linear-gradient(135deg,rgba(42,191,191,0.4),rgba(255,107,71,0.4))'">
       <div class="hero-aventure-overlay"></div>
     </div>
@@ -720,7 +727,7 @@ footer { background:var(--charcoal); color:rgba(255,255,255,0.7); padding:60px 3
           <div class="card-city">Paris, France</div>
           <div class="card-name">City Hostel Le Marais</div>
           <div class="card-meta"><div class="card-rating"><span class="star">★</span> 9.4 <span style="color:var(--gray-light);font-weight:400">(312 avis)</span></div></div>
-          <div class="card-tags"><span class="tag">📶 Wi-Fi</span><span class="tag">✅ Annulation gratuite</span><span class="tag">🌿 Nature</span></div>
+          <div class="card-tags"><span class="tag">📶 Wi-Fi</span><span class="tag">✅ Annulation gratuite</span></div>
           <div class="card-footer">
             <div class="card-price">12€ <span>/ nuit</span></div>
             <div class="card-btns">
@@ -739,12 +746,11 @@ footer { background:var(--charcoal); color:rgba(255,255,255,0.7); padding:60px 3
           <div class="card-city">Amsterdam, Pays-Bas</div>
           <div class="card-name">The Garden Backpackers</div>
           <div class="card-meta"><div class="card-rating"><span class="star">★</span> 9.7 <span style="color:var(--gray-light);font-weight:400">(488 avis)</span></div></div>
-          <div class="card-tags"><span class="tag">🚲 Vélos incl.</span><span class="tag">📶 Wi-Fi</span><span class="tag">🍺 Bar</span></div>
+          <div class="card-tags"><span class="tag">🚲 Vélos incl.</span><span class="tag">🍺 Bar</span></div>
           <div class="card-footer">
             <div class="card-price">18€ <span>/ nuit</span></div>
             <div class="card-btns">
               <button class="btn-book" onclick="openModal('modalReservation')">Réserver</button>
-              <button class="btn-request" onclick="openModal('modalReservation')">Demande</button>
             </div>
           </div>
         </div>
@@ -758,12 +764,11 @@ footer { background:var(--charcoal); color:rgba(255,255,255,0.7); padding:60px 3
           <div class="card-city">Barcelone, Espagne</div>
           <div class="card-name">Sunset Gothic Hideaway</div>
           <div class="card-meta"><div class="card-rating"><span class="star">★</span> 9.2 <span style="color:var(--gray-light);font-weight:400">(276 avis)</span></div></div>
-          <div class="card-tags"><span class="tag">🏊 Piscine</span><span class="tag">📶 Wi-Fi</span><span class="tag">✅ Annulation</span></div>
+          <div class="card-tags"><span class="tag">🏊 Piscine</span><span class="tag">✅ Annulation</span></div>
           <div class="card-footer">
             <div class="card-price">14€ <span>/ nuit</span></div>
             <div class="card-btns">
               <button class="btn-book" onclick="openModal('modalReservation')">Réserver</button>
-              <button class="btn-request" onclick="openModal('modalReservation')">Demande</button>
             </div>
           </div>
         </div>
@@ -777,12 +782,11 @@ footer { background:var(--charcoal); color:rgba(255,255,255,0.7); padding:60px 3
           <div class="card-city">Prague, Tchéquie</div>
           <div class="card-name">Old Town Wanderers Inn</div>
           <div class="card-meta"><div class="card-rating"><span class="star">★</span> 9.5 <span style="color:var(--gray-light);font-weight:400">(154 avis)</span></div></div>
-          <div class="card-tags"><span class="tag">🍳 Petit-déj. incl.</span><span class="tag">🎮 Game room</span><span class="tag">📶 Wi-Fi</span></div>
+          <div class="card-tags"><span class="tag">🍳 Petit-déj. incl.</span><span class="tag">📶 Wi-Fi</span></div>
           <div class="card-footer">
             <div class="card-price">10€ <span>/ nuit</span></div>
             <div class="card-btns">
               <button class="btn-book" onclick="openModal('modalReservation')">Réserver</button>
-              <button class="btn-request" onclick="openModal('modalReservation')">Demande</button>
             </div>
           </div>
         </div>
@@ -834,34 +838,7 @@ footer { background:var(--charcoal); color:rgba(255,255,255,0.7); padding:60px 3
   </div>
 </section>
 
-{{-- ══ LISTE DES DESTINATIONS ══ --}}
-<div class="dest-list-section">
-  <div class="dest-list-inner reveal">
-    <div class="dest-list-title">🗺 Toutes les destinations</div>
-    <div class="dest-tags">
-      <a href="#" class="dest-tag">🇳🇱 Amsterdam</a>
-      <a href="#" class="dest-tag">🇬🇷 Athens</a>
-      <a href="#" class="dest-tag">🇪🇸 Barcelona</a>
-      <a href="#" class="dest-tag">🇩🇪 Berlin</a>
-      <a href="#" class="dest-tag">🇭🇺 Budapest</a>
-      <a href="#" class="dest-tag">🇮🇹 Florence</a>
-      <a href="#" class="dest-tag">🇬🇧 London</a>
-      <a href="#" class="dest-tag">🇪🇸 Madrid</a>
-      <a href="#" class="dest-tag">🇮🇹 Milan</a>
-      <a href="#" class="dest-tag">🇩🇪 Munich</a>
-      <a href="#" class="dest-tag">🇺🇸 New York</a>
-      <a href="#" class="dest-tag">🇫🇷 Nice</a>
-      <a href="#" class="dest-tag">🇫🇷 Paris</a>
-      <a href="#" class="dest-tag">🇨🇿 Prague</a>
-      <a href="#" class="dest-tag">🇮🇹 Rome</a>
-      <a href="#" class="dest-tag">🇸🇪 Stockholm</a>
-      <a href="#" class="dest-tag">🇮🇹 Venice</a>
-      <a href="#" class="dest-tag">🇦🇹 Vienna</a>
-    </div>
-  </div>
-</div>
-
-{{-- ══ SECTION AVENTURE ══ --}}
+{{-- ══ ADVENTURE ══ --}}
 <div class="adventure-section" style="padding-top:90px">
   <div class="adventure-inner reveal">
     <div class="adventure-text">
@@ -874,7 +851,7 @@ footer { background:var(--charcoal); color:rgba(255,255,255,0.7); padding:60px 3
       </div>
     </div>
     <div class="adventure-photos">
-      <div class="adv-photo"><img src="{{ asset('images/aventure.jpg') }}" alt="Aventure" onerror="this.src='https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=300&q=80'"></div>
+      <div class="adv-photo"><img src="{{ asset('images/pexels-quang-nguyen-vinh-222549-6877998.jpg') }}" alt="Aventure"></div>
       <div class="adv-photo"><img src="{{ asset('images/camping.jpg') }}" alt="Camping" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=300&q=80'"></div>
       <div class="adv-photo"><img src="{{ asset('images/travelers.jpg') }}" alt="Travelers" onerror="this.src='https://images.unsplash.com/photo-1523464862212-d6631d073194?w=300&q=80'"></div>
     </div>
@@ -885,66 +862,39 @@ footer { background:var(--charcoal); color:rgba(255,255,255,0.7); padding:60px 3
 <footer>
   <div class="footer-grid">
     <div class="footer-brand">
-      {{-- Logo footer cohérent --}}
-      <a href="{{ url('/') }}" class="footer-logo-wrap">
-        <div class="footer-logo-img">
-          <img src="{{ asset('images/logo2.png') }}" alt="HostelFlow"
-               onerror="this.parentElement.innerHTML='<span class=\'footer-logo-text\'>Hostel<span>Flow</span></span>'">
-        </div>
+      {{-- Logo seul, sans texte ni fond blanc --}}
+      <a href="{{ url('/') }}" style="display:inline-block;margin-bottom:14px;">
+        <img src="{{ asset('images/13.png') }}" alt="HostelFlow"
+             style="height:40px;width:auto;object-fit:contain;filter:brightness(0) invert(1);"
+             onerror="this.style.display='none'">
       </a>
       <p class="footer-tagline">La plateforme de référence pour les voyageurs indépendants. 25 000+ auberges dans 180 pays.</p>
-
-      {{-- Réseaux sociaux avec vraies images --}}
-      <div class="footer-social">
-        <a href="#" class="social-btn" title="Facebook">
-          <img src="{{ asset('images/fb.png') }}" alt="Facebook"
-               onerror="this.outerHTML='<svg viewBox=\'0 0 24 24\' fill=\'white\' width=\'20\' height=\'20\'><path d=\'M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z\'></path></svg>'">
-        </a>
-        <a href="#" class="social-btn" title="Instagram">
-          <img src="{{ asset('images/instagram.png') }}" alt="Instagram"
-               onerror="this.outerHTML='<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\' width=\'20\' height=\'20\'><rect x=\'2\' y=\'2\' width=\'20\' height=\'20\' rx=\'5\' ry=\'5\'></rect><path d=\'M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z\'></path><line x1=\'17.5\' y1=\'6.5\' x2=\'17.51\' y2=\'6.5\'></line></svg>'">
-        </a>
-        <a href="#" class="social-btn" title="TikTok">
-          <img src="{{ asset('images/tiktok.png') }}" alt="TikTok"
-               onerror="this.outerHTML='<span style=\'color:white;font-size:1rem;font-weight:700\'>TT</span>'">
-        </a>
-        <a href="#" class="social-btn" title="YouTube">
-          <img src="{{ asset('images/youtube.png') }}" alt="YouTube"
-               onerror="this.outerHTML='<svg viewBox=\'0 0 24 24\' fill=\'white\' width=\'20\' height=\'20\'><path d=\'M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z\'></path><polygon points=\'9.75 15.02 15.5 12 9.75 8.98 9.75 15.02\' fill=\'#333\'></polygon></svg>'">
-        </a>
-      </div>
     </div>
     <div>
       <div class="footer-col-title">Navigation</div>
       <ul class="footer-links">
         <li><a href="{{ url('/') }}">Accueil</a></li>
-        <li><a href="#">Groupes 10+</a></li>
-        <li><a href="#">Guides</a></li>
+        <li><a href="#offres">Meilleures offres</a></li>
         <li><a href="#" onclick="openModal('modalBlog');return false">Blog des routards</a></li>
-        <li><a href="#">Ajouter votre établissement</a></li>
-        <li><a href="#" onclick="openModal('modalReservation');return false">Extranet</a></li>
-      </ul>
-    </div>
-    <div>
-      <div class="footer-col-title">Informations</div>
-      <ul class="footer-links">
-        <li><a href="#">Aide / FAQ</a></li>
-        <li><a href="#">Nous Joindre</a></li>
-        <li><a href="#">Conditions</a></li>
-        <li><a href="#">Confidentialité</a></li>
-        <li><a href="#">Mentions légales</a></li>
-        <li><a href="#">Cookies</a></li>
+        <li><a href="#" onclick="openModal('modalReservation');return false">Faire une demande</a></li>
       </ul>
     </div>
     <div>
       <div class="footer-col-title">Destinations</div>
       <ul class="footer-links">
-        <li><a href="#">Europe</a></li>
-        <li><a href="#">Amériques</a></li>
-        <li><a href="#">Asie</a></li>
-        <li><a href="#">Afrique</a></li>
-        <li><a href="#">Océanie</a></li>
-        <li><a href="#">Moyen-Orient</a></li>
+        <li><span style="color:rgba(255,255,255,0.4);font-size:0.82rem">Europe</span></li>
+        <li><span style="color:rgba(255,255,255,0.4);font-size:0.82rem">Amériques</span></li>
+        <li><span style="color:rgba(255,255,255,0.4);font-size:0.82rem">Asie</span></li>
+        <li><span style="color:rgba(255,255,255,0.4);font-size:0.82rem">Afrique</span></li>
+        <li><span style="color:rgba(255,255,255,0.4);font-size:0.82rem">Océanie</span></li>
+        <li><span style="color:rgba(255,255,255,0.4);font-size:0.82rem">Moyen-Orient</span></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Espace pro</div>
+      <ul class="footer-links">
+        <li><a href="#" onclick="openModal('modalLogin');return false">Connexion propriétaire</a></li>
+        <li><a href="{{ route('user.login') }}">Connexion équipe</a></li>
       </ul>
     </div>
   </div>
@@ -953,12 +903,17 @@ footer { background:var(--charcoal); color:rgba(255,255,255,0.7); padding:60px 3
     <div class="footer-legal">
       <a href="#">Conditions d'utilisation</a>
       <a href="#">Politique de confidentialité</a>
-      <a href="#">Plan du site</a>
     </div>
   </div>
 </footer>
 
+{{-- ✅ Bouton scroll-to-top : flèche blanche sans fond --}}
+<button class="scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Retour en haut">
+  ↑
+</button>
+
 <script>
+/* ── Modals ── */
 function openModal(id) {
   document.getElementById(id).classList.add('open');
   document.body.style.overflow='hidden';
@@ -973,28 +928,63 @@ document.querySelectorAll('.modal-overlay').forEach(o=>{
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>{m.classList.remove('open');document.body.style.overflow='';});
 });
-function submitForm() {
-  const btn=document.querySelector('#modalReservation .btn-submit');
-  btn.textContent='✅ Demande envoyée avec succès !';
-  btn.style.background='var(--teal)';
-  setTimeout(()=>{closeModal('modalReservation');btn.textContent='🚀 Envoyer ma demande';btn.style.background='';},2000);
+
+/* ── Validation et envoi du formulaire de contact ── */
+function submitContactForm() {
+  let valid = true;
+
+  const fields = [
+    { id: 'cf_first_name', errId: 'err_first_name', type: 'text' },
+    { id: 'cf_last_name',  errId: 'err_last_name',  type: 'text' },
+    { id: 'cf_email',      errId: 'err_email',       type: 'email' },
+    { id: 'cf_destination',errId: 'err_destination', type: 'select' },
+    { id: 'cf_arrival',   errId: 'err_arrival',     type: 'text' },
+    { id: 'cf_departure',  errId: 'err_departure',   type: 'text' },
+  ];
+
+  fields.forEach(f => {
+    const el  = document.getElementById(f.id);
+    const err = document.getElementById(f.errId);
+    let   bad = false;
+
+    if (!el.value.trim()) {
+      bad = true;
+    } else if (f.type === 'email') {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!re.test(el.value.trim())) bad = true;
+    }
+
+    if (bad) {
+      el.classList.add('error');
+      err.style.display = 'block';
+      valid = false;
+    } else {
+      el.classList.remove('error');
+      err.style.display = 'none';
+    }
+  });
+
+  if (!valid) return;
+
+  // Tout est valide → soumettre le formulaire
+  document.getElementById('contactForm').submit();
 }
 
-/* Scroll reveal */
-const revealEls=document.querySelectorAll('.reveal,.offer-card,.dest-card,.perk');
-const observer=new IntersectionObserver((entries)=>{
+/* ── Scroll reveal ── */
+const revealEls = document.querySelectorAll('.reveal,.offer-card,.dest-card,.perk');
+const observer  = new IntersectionObserver((entries)=>{
   entries.forEach(entry=>{
     if(entry.isIntersecting){
-      const el=entry.target;
-      const idx=Array.from(el.parentElement.children).indexOf(el);
-      setTimeout(()=>el.classList.add('visible'),idx*90);
+      const el  = entry.target;
+      const idx = Array.from(el.parentElement.children).indexOf(el);
+      setTimeout(()=>el.classList.add('visible'), idx*90);
       observer.unobserve(el);
     }
   });
 },{threshold:0.1,rootMargin:'0px 0px -40px 0px'});
 revealEls.forEach(el=>observer.observe(el));
 
-/* Typing effect */
+/* ── Typing effect ── */
 const destinations=['Paris, France…','Barcelona, Espagne…','Amsterdam, Pays-Bas…','Prague, Tchéquie…','Rome, Italie…','Berlin, Allemagne…'];
 let dIdx=0,cIdx=0,isDeleting=false;
 function type(){
@@ -1008,11 +998,20 @@ function type(){
 }
 setTimeout(type,1400);
 
-/* Navbar scroll */
+/* ── Navbar scroll shadow ── */
 const nav=document.querySelector('nav');
-window.addEventListener('scroll',()=>{nav.style.boxShadow=window.scrollY>60?'0 4px 24px rgba(44,44,44,0.1)':'none';});
+window.addEventListener('scroll',()=>{
+  nav.style.boxShadow=window.scrollY>60?'0 4px 24px rgba(44,44,44,0.1)':'none';
+});
 
-/* 3D Tilt offer cards */
+/* ── Scroll-to-top visibility ── */
+const scrollBtn = document.getElementById('scrollTopBtn');
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 400) scrollBtn.classList.add('visible');
+  else scrollBtn.classList.remove('visible');
+});
+
+/* ── 3D Tilt offer cards ── */
 document.querySelectorAll('.offer-card').forEach(card=>{
   card.addEventListener('mousemove',e=>{
     const r=card.getBoundingClientRect();
@@ -1022,17 +1021,6 @@ document.querySelectorAll('.offer-card').forEach(card=>{
     card.style.transform=`perspective(900px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateY(-8px) scale(1.01)`;
   });
   card.addEventListener('mouseleave',()=>{card.style.transform='';});
-});
-
-/* Parallax dest cards */
-document.querySelectorAll('.dest-card').forEach(card=>{
-  const img=card.querySelector('.dest-img');
-  card.addEventListener('mousemove',e=>{
-    const r=card.getBoundingClientRect();
-    const x=(e.clientX-r.left)/r.width-0.5,y=(e.clientY-r.top)/r.height-0.5;
-    if(img) img.style.transform=`scale(1.12) translate(${x*14}px,${y*14}px)`;
-  });
-  card.addEventListener('mouseleave',()=>{ if(img) img.style.transform='scale(1)'; });
 });
 </script>
 </body>

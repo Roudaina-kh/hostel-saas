@@ -295,6 +295,14 @@
                 Tous droits réservés. HostelFlow.com ® propose la réservation d'auberges de jeunesse dans le monde entier.
             </p>
         </div>
+        <div class="login-divider"><span>Administration</span></div>
+<a href="{{ route('super-admin.login') }}"
+   style="display:block;text-align:center;font-size:0.82rem;color:#64748B;text-decoration:none;
+          padding:10px;border-radius:12px;border:1px solid #E2E8F0;transition:all 0.2s;margin-top:8px"
+   onmouseover="this.style.borderColor='#7C3AED';this.style.color='#7C3AED'"
+   onmouseout="this.style.borderColor='#E2E8F0';this.style.color='#64748B'">
+  🛡 Espace Super Admin
+</a>
     </footer>
 
 </body>
