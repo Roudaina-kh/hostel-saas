@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Reservation;
 
 use App\Http\Controllers\Controller;
 use App\Models\Country;
+use App\Models\Extra;
 use App\Models\ExchangeRate;
 use App\Models\Guest;
 use App\Models\Hostel;
 use App\Models\Reservation;
+use App\Models\ReservationExtra;
 use App\Models\ReservationPerson;
 use App\Models\Room;
 use App\Models\TentSpace;
@@ -17,12 +19,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
-/**
- * Gère les réservations pour Manager et Staff (guard : auth:user)
- *
- * FIX 2 : "Ajouté par" est automatiquement l'utilisateur connecté.
- *         Rôle financial → lecture seule (create/store/edit/update bloqués).
- */
 class ManagerReservationController extends Controller
 {
     public function __construct(
@@ -91,7 +87,12 @@ class ManagerReservationController extends Controller
 
         $members = $hostel->users()->orderBy('name')->get();
 
-        // ── FIX 2 : utilisateur connecté automatique ──────────────────────
+        // ✅ Extras disponibles pour cet hostel
+        $extras = Extra::where('hostel_id', $hostel->id)
+            ->where('is_enabled', true)
+            ->orderBy('name')
+            ->get();
+
         $user = auth('user')->user();
         $role = $this->currentRole();
         $roleLabel = match($role) {
@@ -107,24 +108,22 @@ class ManagerReservationController extends Controller
         ];
 
         $prefix = $this->getRoutePrefix();
-        // Noms de routes (pour les liens Blade via route())
         $routes = [
-            'index'   => $prefix . '.reservations.index',
-            'create'  => $prefix . '.reservations.create',
-            'store'   => $prefix . '.reservations.store',
-            'edit'    => $prefix . '.reservations.edit',
-            'update'  => $prefix . '.reservations.update',
-            'destroy' => $prefix . '.reservations.destroy',
-            'avail'   => $prefix . '.reservations.available-units',
-            'pwd'     => $prefix . '.reservations.check-password',
-            // URLs pré-calculées pour éviter le double route() dans le JS
+            'index'     => $prefix . '.reservations.index',
+            'create'    => $prefix . '.reservations.create',
+            'store'     => $prefix . '.reservations.store',
+            'edit'      => $prefix . '.reservations.edit',
+            'update'    => $prefix . '.reservations.update',
+            'destroy'   => $prefix . '.reservations.destroy',
+            'avail'     => $prefix . '.reservations.available-units',
+            'pwd'       => $prefix . '.reservations.check-password',
             'store_url' => route($prefix . '.reservations.store'),
             'index_url' => route($prefix . '.reservations.index'),
             'avail_url' => route($prefix . '.reservations.available-units'),
             'pwd_url'   => route($prefix . '.reservations.check-password'),
         ];
 
-        return compact('hostel', 'rooms', 'tentSpaces', 'countries', 'rates', 'members', 'currentUser', 'routes');
+        return compact('hostel', 'rooms', 'tentSpaces', 'countries', 'rates', 'members', 'currentUser', 'routes', 'extras');
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -167,8 +166,7 @@ class ManagerReservationController extends Controller
 
         $canCreate = $role !== 'financial';
         $canEdit   = $role !== 'financial';
-
-        $data = $this->formData($hostel);
+        $data      = $this->formData($hostel);
 
         return view('reservations.index', array_merge($data, compact(
             'reservations', 'stats', 'calendarDays', 'year', 'role', 'canCreate', 'canEdit',
@@ -187,7 +185,7 @@ class ManagerReservationController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // STORE — FIX 2 : user connecté détecté automatiquement
+    // STORE
     // ─────────────────────────────────────────────────────────────────────────
 
     public function store(Request $request)
@@ -209,7 +207,6 @@ class ManagerReservationController extends Controller
             'guests_data' => ['required', 'json'],
         ]);
 
-        // ── FIX 2 : vérifier le mot de passe de l'utilisateur connecté ────
         if (!Hash::check($request->password, $user->password)) {
             return back()->withInput()->withErrors(['password' => 'Mot de passe incorrect.']);
         }
@@ -219,32 +216,39 @@ class ManagerReservationController extends Controller
             return back()->withInput()->withErrors(['guests_data' => 'Données guests invalides.']);
         }
 
+        // ✅ Extras optionnels
+        $extrasData = [];
+        if ($request->filled('extras_data')) {
+            $extrasData = json_decode($request->extras_data, true) ?? [];
+        }
+
         DB::beginTransaction();
         try {
             $this->validateGuestData($guestsData[0]);
             $mainGuest = $this->createGuest($guestsData[0]);
 
             $roleLabel = match($this->currentRole()) {
-                'manager'   => 'Manager',
-                'staff'     => 'Staff',
-                default     => ucfirst($this->currentRole()),
+                'manager' => 'Manager',
+                'staff'   => 'Staff',
+                default   => ucfirst($this->currentRole()),
             };
 
             $reservation = Reservation::create([
-                'hostel_id'       => $hostel->id,
-                'main_guest_id'   => $mainGuest->id,
-                'start_date'      => $request->start_date,
-                'end_date'        => $request->end_date,
-                'nights'          => (int) $request->nights,
-                'total_guests'    => count($guestsData),
-                'status'          => $request->status,
-                'source'          => $request->source,
-                'total_price_tnd' => 0,
-                'total_price_eur' => null,
-                'total_price_usd' => null,
-                'notes'           => $request->notes,
-                'created_by'      => $user->name . ' (' . $roleLabel . ')',  // ex: "Ahmed (Manager)"
-                'user_id'         => $user->id,
+                'hostel_id'        => $hostel->id,
+                'main_guest_id'    => $mainGuest->id,
+                'start_date'       => $request->start_date,
+                'end_date'         => $request->end_date,
+                'nights'           => (int) $request->nights,
+                'total_guests'     => count($guestsData),
+                'status'           => $request->status,
+                'source'           => $request->source,
+                'total_price_tnd'  => 0,
+                'total_price_eur'  => null,
+                'total_price_usd'  => null,
+                'extras_total_tnd' => 0,
+                'notes'            => $request->notes,
+                'created_by'       => $user->name . ' (' . $roleLabel . ')',
+                'user_id'          => $user->id,
             ]);
 
             foreach ($guestsData as $guestData) {
@@ -253,12 +257,11 @@ class ManagerReservationController extends Controller
                 $itemType = $guestData['item_type'];
                 $itemId   = (int) $guestData['item_id'];
 
-                // ── FIX 1 : vérification disponibilité stricte (bed = 1 personne) ──
                 if (!$this->availabilityService->isAvailable(
                     $hostel->id, $itemType, $itemId, $request->start_date, $request->end_date,
                 )) {
                     throw new \Exception(
-                        "L'unité sélectionnée pour « {$guest->first_name} {$guest->last_name} » n'est plus disponible pour ces dates."
+                        "L'unité sélectionnée pour « {$guest->first_name} {$guest->last_name} » n'est plus disponible."
                     );
                 }
 
@@ -281,8 +284,49 @@ class ManagerReservationController extends Controller
                 ]);
             }
 
+            // ✅ Traitement extras
+            $extrasTotalTnd = 0;
+            foreach ($extrasData as $ed) {
+                $extraId  = (int) ($ed['extra_id'] ?? 0);
+                $quantity = (int) ($ed['quantity'] ?? 0);
+                if ($extraId <= 0 || $quantity <= 0) continue;
+
+                $extra = Extra::where('id', $extraId)
+                    ->where('hostel_id', $hostel->id)
+                    ->where('is_enabled', true)
+                    ->first();
+                if (!$extra) continue;
+
+                if ($extra->hasTrackedStock() && $extra->stock_quantity < $quantity) {
+                    throw new \Exception("Stock insuffisant pour « {$extra->name} » (disponible : {$extra->stock_quantity}).");
+                }
+
+                // ✅ Prix sans is_active
+                $priceTnd = 0;
+                $price = $extra->prices()->first();
+                if ($price) {
+                    $priceTnd = (float) $price->price_ttc * $quantity;
+                }
+
+                ReservationExtra::create([
+                    'reservation_id' => $reservation->id,
+                    'extra_id'       => $extra->id,
+                    'quantity'       => $quantity,
+                    'price_tnd'      => $priceTnd,
+                ]);
+
+                if ($extra->hasTrackedStock()) {
+                    $extra->decrement('stock_quantity', $quantity);
+                }
+
+                $extrasTotalTnd += $priceTnd;
+            }
+
             $totals = $this->pricingService->computeTotals($guestsData);
+            $totals['extras_total_tnd'] = $extrasTotalTnd;
+            $totals['total_price_tnd']  = ($totals['total_price_tnd'] ?? 0) + $extrasTotalTnd;
             $reservation->update($totals);
+
             DB::commit();
 
             return redirect()->route($routePrefix . '.reservations.index')
@@ -323,15 +367,21 @@ class ManagerReservationController extends Controller
             ];
         })->values()->toArray();
 
+        // ✅ Extras existants
+        $existingExtras = $reservation->extras->mapWithKeys(function ($re) {
+            return [$re->extra_id => $re->quantity];
+        })->toArray();
+
         $data = $this->formData($hostel);
         $data['reservation']    = $reservation;
         $data['existingGuests'] = $existingGuests;
+        $data['existingExtras'] = $existingExtras;
 
         return view('reservations.edit', $data);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // UPDATE — FIX 2 : user connecté détecté automatiquement
+    // UPDATE
     // ─────────────────────────────────────────────────────────────────────────
 
     public function update(Request $request, int $id)
@@ -363,8 +413,20 @@ class ManagerReservationController extends Controller
             return back()->withInput()->withErrors(['guests_data' => 'Données guests invalides.']);
         }
 
+        $extrasData = [];
+        if ($request->filled('extras_data')) {
+            $extrasData = json_decode($request->extras_data, true) ?? [];
+        }
+
         DB::beginTransaction();
         try {
+            // Restaurer stock extras précédents
+            foreach ($reservation->extras as $oldExtra) {
+                if ($oldExtra->extra && $oldExtra->extra->hasTrackedStock()) {
+                    $oldExtra->extra->increment('stock_quantity', $oldExtra->quantity);
+                }
+            }
+            $reservation->extras()->delete();
             $reservation->people()->delete();
 
             $this->validateGuestData($guestsData[0]);
@@ -421,8 +483,49 @@ class ManagerReservationController extends Controller
                 ]);
             }
 
+            // ✅ Retraitement extras
+            $extrasTotalTnd = 0;
+            foreach ($extrasData as $ed) {
+                $extraId  = (int) ($ed['extra_id'] ?? 0);
+                $quantity = (int) ($ed['quantity'] ?? 0);
+                if ($extraId <= 0 || $quantity <= 0) continue;
+
+                $extra = Extra::where('id', $extraId)
+                    ->where('hostel_id', $hostel->id)
+                    ->where('is_enabled', true)
+                    ->first();
+                if (!$extra) continue;
+
+                if ($extra->hasTrackedStock() && $extra->stock_quantity < $quantity) {
+                    throw new \Exception("Stock insuffisant pour « {$extra->name} » (disponible : {$extra->stock_quantity}).");
+                }
+
+                // ✅ Prix sans is_active
+                $priceTnd = 0;
+                $price = $extra->prices()->first();
+                if ($price) {
+                    $priceTnd = (float) $price->price_ttc * $quantity;
+                }
+
+                ReservationExtra::create([
+                    'reservation_id' => $reservation->id,
+                    'extra_id'       => $extra->id,
+                    'quantity'       => $quantity,
+                    'price_tnd'      => $priceTnd,
+                ]);
+
+                if ($extra->hasTrackedStock()) {
+                    $extra->decrement('stock_quantity', $quantity);
+                }
+
+                $extrasTotalTnd += $priceTnd;
+            }
+
             $totals = $this->pricingService->computeTotals($guestsData);
+            $totals['extras_total_tnd'] = $extrasTotalTnd;
+            $totals['total_price_tnd']  = ($totals['total_price_tnd'] ?? 0) + $extrasTotalTnd;
             $reservation->update($totals);
+
             DB::commit();
 
             return redirect()->route($routePrefix . '.reservations.index')
@@ -435,7 +538,7 @@ class ManagerReservationController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // AJAX availableUnits
+    // AJAX
     // ─────────────────────────────────────────────────────────────────────────
 
     public function availableUnits(Request $request)
@@ -450,16 +553,52 @@ class ManagerReservationController extends Controller
         );
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // AJAX checkPassword — FIX 2 : vérifie l'utilisateur connecté directement
-    // ─────────────────────────────────────────────────────────────────────────
-
     public function checkPassword(Request $request)
     {
         $request->validate(['password' => ['required', 'string']]);
         $user    = auth('user')->user();
         $success = Hash::check($request->password, $user->password);
         return response()->json(['success' => $success]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // DESTROY
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function destroy(Request $request, int $id)
+    {
+        $this->denyFinancial();
+        $hostel      = $this->currentHostel();
+        $reservation = Reservation::where('hostel_id', $hostel->id)->findOrFail($id);
+        $user        = auth('user')->user();
+        $routePrefix = $this->getRoutePrefix();
+
+        $request->validate(['password' => ['required', 'string']]);
+
+        if (!Hash::check($request->password, $user->password)) {
+            return back()->withErrors(['password' => 'Mot de passe incorrect.']);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Restaurer stock avant suppression
+            foreach ($reservation->extras as $re) {
+                if ($re->extra && $re->extra->hasTrackedStock()) {
+                    $re->extra->increment('stock_quantity', $re->quantity);
+                }
+            }
+            $reservation->extras()->delete();
+            $reservation->people()->delete();
+            $reservation->delete();
+            DB::commit();
+
+            return redirect()->route($routePrefix . '.reservations.index')
+                ->with('success', '🗑️ Réservation #' . $id . ' supprimée avec succès.');
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Erreur : ' . $e->getMessage()]);
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -512,37 +651,4 @@ class ManagerReservationController extends Controller
         if ((int) $data['item_id'] <= 0)
             throw new \InvalidArgumentException('Une unité doit être sélectionnée pour chaque guest.');
     }
-    // ─────────────────────────────────────────────────────────────────────────
-    // DESTROY — Suppression réservation (Manager / Staff)
-    // ─────────────────────────────────────────────────────────────────────────
-
-    public function destroy(Request $request, int $id)
-    {
-        $this->denyFinancial();
-        $hostel      = $this->currentHostel();
-        $reservation = Reservation::where('hostel_id', $hostel->id)->findOrFail($id);
-        $user        = auth('user')->user();
-        $routePrefix = $this->getRoutePrefix();
-
-        $request->validate(['password' => ['required', 'string']]);
-
-        if (!Hash::check($request->password, $user->password)) {
-            return back()->withErrors(['password' => 'Mot de passe incorrect.']);
-        }
-
-        DB::beginTransaction();
-        try {
-            $reservation->people()->delete();
-            $reservation->delete();
-            DB::commit();
-
-            return redirect()->route($routePrefix . '.reservations.index')
-                ->with('success', '🗑️ Réservation #' . $id . ' supprimée avec succès.');
-
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            return back()->withErrors(['error' => 'Erreur lors de la suppression : ' . $e->getMessage()]);
-        }
-    }
-
 }

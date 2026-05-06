@@ -1,6 +1,3 @@
-bash
-
-cat > /home/claude/edit.blade.php << 'BLADEEOF'
 @extends('layouts.app')
 
 @section('title', 'Modifier la réservation #' . $reservation->id)
@@ -31,6 +28,7 @@ cat > /home/claude/edit.blade.php << 'BLADEEOF'
         @csrf
         @method('PUT')
         <input type="hidden" name="guests_data" id="guests_data">
+        <input type="hidden" name="extras_data" id="extras_data">
 
         {{-- 1. Informations réservation --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-4">
@@ -109,10 +107,67 @@ cat > /home/claude/edit.blade.php << 'BLADEEOF'
             </div>
         </div>
 
-        {{-- 3. Récapitulatif --}}
+        {{-- ✅ 3. Extras (optionnel) --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-4">
             <div class="flex items-center gap-3 px-5 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
                 <span class="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">3</span>
+                <span class="font-semibold text-gray-800">Extras</span>
+                <span class="text-gray-400 font-normal text-sm ml-1">(optionnel)</span>
+                <span id="extras_total_badge" class="hidden ml-auto text-xs font-semibold bg-green-100 text-green-700 px-3 py-1 rounded-full"></span>
+            </div>
+            <div class="p-5">
+                @if(isset($extras) && $extras->count() > 0)
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        @foreach($extras as $extra)
+                            @php
+                                $isTracked    = in_array($extra->stock_mode, ['consumable', 'rentable']);
+                                $existingQty  = $existingExtras[$extra->id] ?? 0;
+                                $stock        = $extra->stock_quantity + $existingQty; // stock réel + quantité déjà allouée
+                                $isAvailable  = !$isTracked || $stock > 0;
+                            @endphp
+                            <div class="border border-gray-200 rounded-xl p-4 {{ $isAvailable ? 'bg-white hover:border-blue-300 transition' : 'bg-gray-50 opacity-60' }}">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex-1">
+                                        <p class="font-semibold text-gray-800 text-sm">{{ $extra->name }}</p>
+                                        @if($extra->description)
+                                            <p class="text-xs text-gray-400 mt-0.5">{{ $extra->description }}</p>
+                                        @endif
+                                    </div>
+                                    @if($isTracked)
+                                        <span class="ml-2 text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0
+                                            {{ $stock > 5 ? 'bg-green-100 text-green-700' : ($stock > 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-600') }}">
+                                            {{ $stock > 0 ? "Stock : {$stock}" : 'Rupture' }}
+                                        </span>
+                                    @else
+                                        <span class="ml-2 text-xs px-2 py-0.5 rounded-full font-medium bg-blue-100 text-blue-700 flex-shrink-0">∞ Illimité</span>
+                                    @endif
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <label class="text-xs text-gray-500 font-medium">Quantité :</label>
+                                    <input type="number"
+                                           class="extra-qty-input w-20 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                           min="0"
+                                           max="{{ $isTracked ? $stock : 999 }}"
+                                           value="{{ $existingQty }}"
+                                           data-extra-id="{{ $extra->id }}"
+                                           data-max="{{ $isTracked ? $stock : 999 }}"
+                                           {{ !$isAvailable ? 'disabled' : '' }}>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-gray-400 text-sm italic text-center py-6">
+                        🛒 Aucun extra disponible pour cet hostel.
+                    </p>
+                @endif
+            </div>
+        </div>
+
+        {{-- 4. Récapitulatif --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-4">
+            <div class="flex items-center gap-3 px-5 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
+                <span class="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">4</span>
                 <span class="font-semibold text-gray-800">Récapitulatif tarification</span>
             </div>
             <div class="p-5">
@@ -161,10 +216,10 @@ cat > /home/claude/edit.blade.php << 'BLADEEOF'
             </div>
         </div>
 
-        {{-- 4. Confirmation --}}
+        {{-- 5. Confirmation --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
             <div class="flex items-center gap-3 px-5 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
-                <span class="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">4</span>
+                <span class="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">5</span>
                 <span class="font-semibold text-gray-800">Confirmation &amp; Sécurité</span>
             </div>
             <div class="p-5">
@@ -214,6 +269,7 @@ var ROOMS           = {!! json_encode($rooms->load('beds')) !!};
 var TENT_SPACES     = {!! json_encode($tentSpaces) !!};
 var COUNTRIES       = {!! json_encode($countries) !!};
 var EXISTING_GUESTS = {!! json_encode($existingGuests) !!};
+var EXISTING_EXTRAS = {!! json_encode($existingExtras ?? []) !!};
 
 var RATES = {
     eur: { sell: {{ $jsEurSell }}, buy: {{ $jsEurBuy }} },
@@ -225,11 +281,57 @@ var ROUTES = {
     csrf:           '{{ csrf_token() }}'
 };
 var TODAY = new Date().toISOString().split('T')[0];
+
+// ── Gestion extras ────────────────────────────────────────────────────────
+var extrasMap = {};
+
+// Initialiser avec les extras existants
+Object.keys(EXISTING_EXTRAS).forEach(function(id) {
+    extrasMap[id] = EXISTING_EXTRAS[id];
+});
+
+function updateExtrasBadge() {
+    var count = 0, total = 0;
+    Object.keys(extrasMap).forEach(function(id) {
+        var q = parseInt(extrasMap[id]) || 0;
+        if (q > 0) { count++; total += q; }
+    });
+    var badge = document.getElementById('extras_total_badge');
+    if (!badge) return;
+    if (count > 0) { badge.textContent = count + ' extra(s) — ' + total + ' unité(s)'; badge.classList.remove('hidden'); }
+    else badge.classList.add('hidden');
+}
+
+function serializeExtras() {
+    var result = [];
+    Object.keys(extrasMap).forEach(function(id) {
+        var qty = parseInt(extrasMap[id]) || 0;
+        if (qty > 0) result.push({ extra_id: parseInt(id), quantity: qty });
+    });
+    return JSON.stringify(result);
+}
 </script>
 
-{{-- Le même JS que create.blade.php — copié intégralement --}}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+
+    // ── Extras : écoute les inputs quantité ───────────────────────────────
+    document.querySelectorAll('.extra-qty-input').forEach(function(input) {
+        input.addEventListener('input', function() {
+            var extraId = this.dataset.extraId;
+            var max     = parseInt(this.dataset.max || 999);
+            var val     = parseInt(this.value) || 0;
+            if (val < 0) { val = 0; this.value = 0; }
+            if (val > max) { val = max; this.value = max; }
+            extrasMap[extraId] = val;
+            updateExtrasBadge();
+        });
+        // Init badge avec valeurs existantes
+        var id = input.dataset.extraId;
+        if (extrasMap[id] && parseInt(extrasMap[id]) > 0) {
+            updateExtrasBadge();
+        }
+    });
 
     var guests         = [];
     var selectedIdx    = 0;
@@ -251,6 +353,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var $addedBy  = document.getElementById('added_by_user_id');
     var $form     = document.getElementById('reservation_form');
     var $gdata    = document.getElementById('guests_data');
+    var $edata    = document.getElementById('extras_data');
     var $notice   = document.getElementById('availability_notice');
 
     calcNights();
@@ -288,7 +391,6 @@ document.addEventListener('DOMContentLoaded', function () {
         $nights.value = d > 0 ? Math.round(d) : 0;
     }
 
-    // ── Initialiser avec les données existantes ────────────────────────────
     function initFromExisting() {
         if (EXISTING_GUESTS && EXISTING_GUESTS.length > 0) {
             guests = EXISTING_GUESTS.map(function(g, i) {
@@ -502,7 +604,6 @@ document.addEventListener('DOMContentLoaded', function () {
     function fetchAvailability() {
         if (!$start.value || !$end.value) { availableUnits = buildStaticUnits(); renderDetail(); renderList(); calcTotals(); return; }
         fetch(ROUTES.availableUnits + '?start_date=' + $start.value + '&end_date=' + $end.value + '&reservation_id={{ $reservation->id }}')
-
             .then(function(r){ if (!r.ok) throw new Error(); return r.json(); })
             .then(function(data){
                 availableUnits = data;
@@ -553,6 +654,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         calcTotals();
         $gdata.value = JSON.stringify(guests);
+        // ✅ Sérialiser les extras
+        if ($edata) $edata.value = serializeExtras();
     });
 
     $start.addEventListener('change', function() {
@@ -564,7 +667,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function esc(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
 
-    // ── Init avec données existantes ────────────────────────────────────────
     initFromExisting();
     fetchAvailability();
 

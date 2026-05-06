@@ -20,17 +20,19 @@ class Reservation extends Model
         'total_price_tnd',
         'total_price_eur',
         'total_price_usd',
+        'extras_total_tnd', // ✅ ajouté
         'notes',
         'created_by',
         'user_id',
     ];
 
     protected $casts = [
-        'start_date'      => 'date',
-        'end_date'        => 'date',
-        'total_price_tnd' => 'decimal:3',
-        'total_price_eur' => 'decimal:3',
-        'total_price_usd' => 'decimal:3',
+        'start_date'        => 'date',
+        'end_date'          => 'date',
+        'total_price_tnd'   => 'decimal:3',
+        'total_price_eur'   => 'decimal:3',
+        'total_price_usd'   => 'decimal:3',
+        'extras_total_tnd'  => 'decimal:3',
     ];
 
     public function hostel(): BelongsTo
@@ -53,7 +55,18 @@ class Reservation extends Model
         return $this->belongsTo(User::class);
     }
 
-    // Scopes utiles
+    // ✅ Relation extras
+    public function extras(): HasMany
+    {
+        return $this->hasMany(ReservationExtra::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    // Scopes
     public function scopeActive($query)
     {
         return $query->whereNotIn('status', ['cancelled']);
@@ -69,8 +82,4 @@ class Reservation extends Model
         return $query->where('start_date', '<', $end)
                      ->where('end_date', '>', $start);
     }
-    public function payments()
-{
-    return $this->hasMany(\App\Models\Payment::class);
-}
 }

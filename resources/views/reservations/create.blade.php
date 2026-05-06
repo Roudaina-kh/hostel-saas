@@ -10,7 +10,6 @@
             <h1 class="text-2xl font-bold text-gray-900">Créer une réservation</h1>
             <p class="text-sm text-gray-500 mt-0.5">{{ $hostel->name }}</p>
         </div>
-        {{-- ✅ FIX : route dynamique selon le rôle --}}
         <a id="back-link" href="#" class="text-sm text-blue-600 hover:underline">← Retour aux réservations</a>
     </div>
 
@@ -28,11 +27,10 @@
         </div>
     @endif
 
-    {{-- ✅ FIX : action dynamique selon le rôle --}}
-    {{-- action sera défini dynamiquement via JS selon le préfixe URL --}}
     <form method="POST" action="" id="reservation_form">
         @csrf
         <input type="hidden" name="guests_data" id="guests_data">
+        <input type="hidden" name="extras_data" id="extras_data">
 
         {{-- 1. Informations réservation --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-4">
@@ -113,10 +111,66 @@
             </div>
         </div>
 
-        {{-- 3. Récapitulatif --}}
+        {{-- ✅ 3. Extras (optionnel) --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-4">
             <div class="flex items-center gap-3 px-5 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
                 <span class="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">3</span>
+                <span class="font-semibold text-gray-800">Extras</span>
+                <span class="text-gray-400 font-normal text-sm ml-1">(optionnel)</span>
+                <span id="extras_total_badge" class="hidden ml-auto text-xs font-semibold bg-green-100 text-green-700 px-3 py-1 rounded-full"></span>
+            </div>
+            <div class="p-5">
+                @if(isset($extras) && $extras->count() > 0)
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        @foreach($extras as $extra)
+                            @php
+                                $isTracked   = in_array($extra->stock_mode, ['consumable', 'rentable']);
+                                $stock       = $extra->stock_quantity;
+                                $isAvailable = !$isTracked || $stock > 0;
+                            @endphp
+                            <div class="border border-gray-200 rounded-xl p-4 {{ $isAvailable ? 'bg-white hover:border-blue-300 transition' : 'bg-gray-50 opacity-60' }}">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex-1">
+                                        <p class="font-semibold text-gray-800 text-sm">{{ $extra->name }}</p>
+                                        @if($extra->description)
+                                            <p class="text-xs text-gray-400 mt-0.5">{{ $extra->description }}</p>
+                                        @endif
+                                    </div>
+                                    @if($isTracked)
+                                        <span class="ml-2 text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0
+                                            {{ $stock > 5 ? 'bg-green-100 text-green-700' : ($stock > 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-600') }}">
+                                            {{ $stock > 0 ? "Stock : {$stock}" : 'Rupture' }}
+                                        </span>
+                                    @else
+                                        <span class="ml-2 text-xs px-2 py-0.5 rounded-full font-medium bg-blue-100 text-blue-700 flex-shrink-0">∞ Illimité</span>
+                                    @endif
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <label class="text-xs text-gray-500 font-medium">Quantité :</label>
+                                    <input type="number"
+                                           class="extra-qty-input w-20 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                           min="0"
+                                           max="{{ $isTracked ? $stock : 999 }}"
+                                           value="0"
+                                           data-extra-id="{{ $extra->id }}"
+                                           data-max="{{ $isTracked ? $stock : 999 }}"
+                                           {{ !$isAvailable ? 'disabled' : '' }}>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-gray-400 text-sm italic text-center py-6">
+                        🛒 Aucun extra disponible pour cet hostel.
+                    </p>
+                @endif
+            </div>
+        </div>
+
+        {{-- 4. Récapitulatif --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-4">
+            <div class="flex items-center gap-3 px-5 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
+                <span class="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">4</span>
                 <span class="font-semibold text-gray-800">Récapitulatif tarification</span>
             </div>
             <div class="p-5">
@@ -140,6 +194,9 @@
                     <div class="flex justify-between text-sm"><span class="text-gray-600">Total TND</span><strong id="total_tnd">0.000</strong></div>
                     <div class="flex justify-between text-sm"><span class="text-gray-600">Total EUR</span><strong id="total_eur">0.000</strong></div>
                     <div class="flex justify-between text-sm"><span class="text-gray-600">Total USD</span><strong id="total_usd">0.000</strong></div>
+                    <div class="flex justify-between text-sm text-green-700 font-semibold border-t pt-2 mt-1" id="extras_summary_row" style="display:none!important">
+                        <span>Extras TND</span><strong id="extras_tnd_display">0.000</strong>
+                    </div>
                 </div>
                 @php
                     $eurRate = $rates->get('EUR');
@@ -165,10 +222,10 @@
             </div>
         </div>
 
-        {{-- 4. Confirmation --}}
+        {{-- 5. Confirmation --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
             <div class="flex items-center gap-3 px-5 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
-                <span class="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">4</span>
+                <span class="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">5</span>
                 <span class="font-semibold text-gray-800">Confirmation &amp; Sécurité</span>
             </div>
             <div class="p-5">
@@ -227,10 +284,6 @@ var RATES = {
     usd: { sell: {{ $jsUsdSell }}, buy: {{ $jsUsdBuy }} }
 };
 
-// Détermination du préfixe depuis l'URL du navigateur
-// /manager/reservations/create → prefix = '/manager'
-// /staff/reservations/create   → prefix = '/staff'
-// /reservations/create         → prefix = ''
 (function() {
     var parts = window.location.pathname.split('/');
     var first = parts[1] || '';
@@ -245,22 +298,59 @@ var ROUTES = {
 };
 
 var TODAY = new Date().toISOString().split('T')[0];
+
+// ── Gestion extras ────────────────────────────────────────────────────────
+var extrasMap = {}; // { extra_id: quantity }
+
+function updateExtrasBadge() {
+    var count = 0, total = 0;
+    Object.keys(extrasMap).forEach(function(id) {
+        var q = parseInt(extrasMap[id]) || 0;
+        if (q > 0) { count++; total += q; }
+    });
+    var badge = document.getElementById('extras_total_badge');
+    var row   = document.getElementById('extras_summary_row');
+    var disp  = document.getElementById('extras_tnd_display');
+    if (badge) {
+        if (count > 0) { badge.textContent = count + ' extra(s) — ' + total + ' unité(s)'; badge.classList.remove('hidden'); }
+        else badge.classList.add('hidden');
+    }
+    if (row) row.style.display = count > 0 ? 'flex' : 'none';
+}
+
+function serializeExtras() {
+    var result = [];
+    Object.keys(extrasMap).forEach(function(id) {
+        var qty = parseInt(extrasMap[id]) || 0;
+        if (qty > 0) result.push({ extra_id: parseInt(id), quantity: qty });
+    });
+    return JSON.stringify(result);
+}
 </script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    // ── Définir l'action du formulaire selon le préfixe URL ──────────────
+    // ── Définir l'action du formulaire ────────────────────────────────────
     var _prefix = window._HOSTEL_PREFIX || '';
     var _form = document.getElementById('reservation_form');
-    if (_form) {
-        _form.action = window.location.origin + _prefix + '/reservations';
-    }
-    // ── Définir le lien "Retour" ──────────────────────────────────────────
+    if (_form) _form.action = window.location.origin + _prefix + '/reservations';
+
     var _backLink = document.getElementById('back-link');
-    if (_backLink) {
-        _backLink.href = window.location.origin + _prefix + '/reservations';
-    }
+    if (_backLink) _backLink.href = window.location.origin + _prefix + '/reservations';
+
+    // ── Extras : écoute les inputs quantité ───────────────────────────────
+    document.querySelectorAll('.extra-qty-input').forEach(function(input) {
+        input.addEventListener('input', function() {
+            var extraId = this.dataset.extraId;
+            var max     = parseInt(this.dataset.max || 999);
+            var val     = parseInt(this.value) || 0;
+            if (val < 0) { val = 0; this.value = 0; }
+            if (val > max) { val = max; this.value = max; }
+            extrasMap[extraId] = val;
+            updateExtrasBadge();
+        });
+    });
 
     var guests         = [];
     var selectedIdx    = 0;
@@ -281,6 +371,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var $pwdSt    = document.getElementById('password_status');
     var $form     = document.getElementById('reservation_form');
     var $gdata    = document.getElementById('guests_data');
+    var $edata    = document.getElementById('extras_data');
     var $notice   = document.getElementById('availability_notice');
 
     if (!$start.value) { $start.value = TODAY; }
@@ -593,6 +684,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         calcTotals();
         $gdata.value = JSON.stringify(guests);
+        // ✅ Sérialiser les extras
+        if ($edata) $edata.value = serializeExtras();
     });
 
     $start.addEventListener('change', function() {
