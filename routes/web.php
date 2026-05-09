@@ -34,24 +34,31 @@ use App\Http\Controllers\Staff\CashShiftController;
 use App\Http\Controllers\Manager\ManagerInventoryBlockController;
 use App\Http\Controllers\Reservation\CreateReservationController;
 use App\Http\Controllers\Reservation\ManagerReservationController;
+use App\Http\Controllers\SearchController;
+
 
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════
 // LANDING & CONTACT (routes publiques)
-// ═══════════════════════════════════════════════════════
-Route::get('/', [App\Http\Controllers\LandingController::class, 'index'])->name('landing');
+// ═══════════════════════════════════════════════
+Route::get('/', [\App\Http\Controllers\SearchController::class, 'index'])->name('landing');
 
 Route::post('/contact', [\App\Http\Controllers\ContactRequestController::class, 'store'])
     ->name('contact.store');
+Route::get('/reserve/{hostel}', [\App\Http\Controllers\ContactRequestController::class, 'create'])
+    ->name('contact.create');
+Route::get('/search',              [SearchController::class, 'index'])->name('search.index');
+Route::get('/search/regions',      [SearchController::class, 'regions'])->name('search.regions');
+Route::get('/search/availability', [SearchController::class, 'availability'])->name('search.availability');
+Route::get('/explore/{id}',        [SearchController::class, 'show'])->name('search.show');
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════
 // OWNER AUTH
-// ═══════════════════════════════════════════════════════
-Route::get('/login', [OwnerAuthController::class, 'create'])->name('owner.login');
-Route::post('/login', [OwnerAuthController::class, 'store'])->name('owner.login.store');
+// ═══════════════════════════════════════════════
+Route::get('/login',  [OwnerAuthController::class, 'create'])->name('owner.login');
+Route::post('/login', [OwnerAuthController::class, 'store'])->name('owner.login.store');;
+Route::post('/logout', [OwnerAuthController::class, 'destroy'])->name('owner.logout');
 
-Route::middleware('auth:owner')->group(function () {
-    Route::post('/logout', [OwnerAuthController::class, 'destroy'])->name('owner.logout');
-});
 
 // ═══════════════════════════════════════════════════════
 // SUPER ADMIN
@@ -164,6 +171,8 @@ Route::middleware('auth:owner')->group(function () {
         Route::patch('/contact-requests/{contactRequest}/mark-read', [\App\Http\Controllers\ContactRequestController::class, 'markRead'])->name('contact-requests.mark-read');
         Route::patch('/contact-requests/{contactRequest}/mark-replied', [\App\Http\Controllers\ContactRequestController::class, 'markReplied'])->name('contact-requests.mark-replied');
         Route::delete('/contact-requests/{contactRequest}', [\App\Http\Controllers\ContactRequestController::class, 'destroy'])->name('contact-requests.destroy');
+        Route::patch('/contact-requests/{contactRequest}/confirm', [\App\Http\Controllers\ContactRequestController::class, 'confirm'])->name('contact-requests.confirm');
+        Route::patch('/contact-requests/{contactRequest}/cancel',  [\App\Http\Controllers\ContactRequestController::class, 'cancel'])->name('contact-requests.cancel');
 
         // Réservations OWNER
         Route::get('/reservations',                 [CreateReservationController::class, 'index'])->name('reservations.index');
@@ -207,6 +216,8 @@ Route::prefix('manager')->name('manager.')->middleware(['auth:user', 'manager.au
     Route::get('/reservations/{id}/edit',       [ManagerReservationController::class, 'edit'])->name('reservations.edit');
     Route::put('/reservations/{id}',            [ManagerReservationController::class, 'update'])->name('reservations.update');
     Route::delete('/reservations/{id}',         [ManagerReservationController::class, 'destroy'])->name('reservations.destroy');
+    Route::patch('/contact-requests/{contactRequest}/confirm', [\App\Http\Controllers\ContactRequestController::class, 'confirm'])->name('contact-requests.confirm');
+    Route::patch('/contact-requests/{contactRequest}/cancel',  [\App\Http\Controllers\ContactRequestController::class, 'cancel'])->name('contact-requests.cancel');
 
     // Payments Manager
     Route::get('/payments/reservation/{reservation}/people', [\App\Http\Controllers\Manager\ManagerPaymentController::class, 'people'])->name('payments.people');

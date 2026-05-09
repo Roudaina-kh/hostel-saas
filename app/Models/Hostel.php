@@ -4,19 +4,34 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+
 class Hostel extends Model
 {
-    protected $fillable = [
-        'owner_id',
-        'name',
-        'email',
-        'phone',
-        'address',
-        'city',
-        'country',
-        'status',
-        'is_active', // ✅ ajouté
-    ];
+protected $fillable = [
+    'owner_id',
+    'name',
+    'type',
+    'region_id',        
+    'address',
+    'city',
+    'country',
+    'phone',
+    'email',
+    'description',
+    'latitude',
+    'longitude',
+    'default_currency',
+    'timezone',
+    'is_active',
+    'status',
+    'rating',
+    'total_reviews',
+    'cover_image',
+];
+    public function region(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+{
+    return $this->belongsTo(\App\Models\Region::class);
+}
 
     protected function casts(): array
     {

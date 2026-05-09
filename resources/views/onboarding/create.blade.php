@@ -417,6 +417,25 @@
                                placeholder="Tunis" required>
                     </div>
                 </div>
+                {{-- Région (Gouvernorat) --}}
+<div class="form-group fade-up d5">
+    <label class="form-label" for="region_id">Gouvernorat / Région *</label>
+    <select id="region_id" name="region_id" class="input-field-plain" required>
+        <option value="">— Sélectionner votre gouvernorat —</option>
+        @foreach($regions as $gouvernorat)
+            <option value="{{ $gouvernorat->id }}"
+                {{ old('region_id') == $gouvernorat->id ? 'selected' : '' }}>
+                {{ $gouvernorat->name }}
+            </option>
+            @foreach($gouvernorat->children as $ville)
+                <option value="{{ $ville->id }}"
+                    {{ old('region_id') == $ville->id ? 'selected' : '' }}>
+                    &nbsp;&nbsp;↳ {{ $ville->name }}
+                </option>
+            @endforeach
+        @endforeach
+    </select>
+</div>
 
                 {{-- Pays --}}
                 <div class="form-group fade-up d5" style="position:relative; z-index: 50;">

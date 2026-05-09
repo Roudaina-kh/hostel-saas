@@ -9,25 +9,22 @@ class StaffDashboardController extends Controller
 {
     public function index()
     {
-        $user = Auth::guard('user')->user();
-
-        // Récupérer le hostel actif depuis la session (stocké lors du login)
+        $user     = Auth::guard('user')->user();
         $hostelId = session('staff_hostel_id');
 
-        $hostel = $user->hostels()
+        $activeHostel = $user->hostels()
             ->where('hostels.id', $hostelId)
             ->wherePivot('status', 'active')
             ->first();
 
-        if (!$hostel) {
+        if (!$activeHostel) {
             Auth::guard('user')->logout();
-            return redirect()->route('login')
-                ->with('error', 'Aucun hostel actif trouvé.');
+            return redirect()->route('user.login')
+                ->withErrors(['email' => 'Aucun hostel actif associé à votre compte.']);
         }
 
-        // Rôle depuis le pivot
-        $role = $hostel->pivot->role;
+        $role = $activeHostel->pivot->role;
 
-        return view('staff.dashboard', compact('user', 'hostel', 'role'));
+        return view('staff.dashboard', compact('user', 'activeHostel', 'role'));
     }
 }

@@ -3,17 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Models\ContactRequest;
+use App\Models\Hostel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ContactRequestController extends Controller
 {
     /**
-     * Enregistrement depuis le formulaire public de la landing page.
-     * Validation stricte côté serveur — aucun champ requis vide.
+     * Formulaire public de demande de réservation pour un hostel donné.
+     */
+    public function create(Hostel $hostel)
+    {
+        abort_unless($hostel->is_active, 404);
+        return view('contact-requests.create', compact('hostel'));
+    }
+
+    /**
+     * Enregistrement de la demande publique.
      */
     public function store(Request $request)
     {
         $data = $request->validate([
+            'hostel_id'      => 'required|exists:hostels,id',
             'first_name'     => 'required|string|max:100',
             'last_name'      => 'required|string|max:100',
             'email'          => 'required|email|max:150',
@@ -25,6 +36,8 @@ class ContactRequestController extends Controller
             'room_type'      => 'nullable|string|max:100',
             'message'        => 'nullable|string|max:2000',
         ], [
+            'hostel_id.required'      => 'Hostel non spécifié.',
+            'hostel_id.exists'        => 'Hostel introuvable.',
             'first_name.required'     => 'Le prénom est obligatoire.',
             'last_name.required'      => 'Le nom est obligatoire.',
             'email.required'          => 'L\'email est obligatoire.',
@@ -42,46 +55,89 @@ class ContactRequestController extends Controller
     }
 
     /**
-     * Liste des demandes — accessible owner et manager.
+     * Liste des demandes — filtrée par hostel courant.
      */
     public function index()
     {
-        $requests = ContactRequest::latest()->paginate(20);
+        $hostelId = $this->currentHostelId();
+
+        $base = ContactRequest::where('hostel_id', $hostelId);
+
+        $requests = (clone $base)->latest()->paginate(20);
 
         $stats = [
-            'total'   => ContactRequest::count(),
-            'new'     => ContactRequest::where('status', 'new')->count(),
-            'read'    => ContactRequest::where('status', 'read')->count(),
-            'replied' => ContactRequest::where('status', 'replied')->count(),
+            'total'     => (clone $base)->count(),
+            'new'       => (clone $base)->where('status', 'new')->count(),
+            'confirmed' => (clone $base)->where('status', 'confirmed')->count(),
+            'cancelled' => (clone $base)->where('status', 'cancelled')->count(),
         ];
 
         return view('contact-requests.index', compact('requests', 'stats'));
     }
 
     /**
-     * Marquer comme lu.
+     * ✅ Confirmer la réservation.
      */
-    public function markRead(ContactRequest $contactRequest)
+    public function confirm(ContactRequest $contactRequest)
     {
-        $contactRequest->update(['status' => 'read']);
-        return back()->with('success', 'Demande marquée comme lue.');
+        $this->authorizeAccess($contactRequest);
+        $contactRequest->update(['status' => 'confirmed']);
+        return back()->with('success', 'Réservation confirmée.');
     }
 
     /**
-     * Marquer comme répondu.
+     * ❌ Annuler la demande.
      */
-    public function markReplied(ContactRequest $contactRequest)
+    public function cancel(ContactRequest $contactRequest)
     {
-        $contactRequest->update(['status' => 'replied']);
-        return back()->with('success', 'Demande marquée comme répondue.');
+        $this->authorizeAccess($contactRequest);
+        $contactRequest->update(['status' => 'cancelled']);
+        return back()->with('success', 'Demande annulée.');
     }
 
     /**
-     * Supprimer.
+     * 🗑 Supprimer.
      */
     public function destroy(ContactRequest $contactRequest)
     {
+        $this->authorizeAccess($contactRequest);
         $contactRequest->delete();
         return back()->with('success', 'Demande supprimée.');
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // Helpers privés (filtrage + sécurité par hostel)
+    // ─────────────────────────────────────────────────────────────────
+
+    /**
+     * Récupère l'ID du hostel actuellement sélectionné selon le guard.
+     */
+    private function currentHostelId(): int
+    {
+        if (Auth::guard('owner')->check()) {
+            $id = (int) session('hostel_id');
+            abort_if(!$id, 403, 'Aucun hostel sélectionné.');
+            return $id;
+        }
+
+        if (Auth::guard('user')->check()) {
+            $id = (int) session('staff_hostel_id');
+            abort_if(!$id, 403, 'Aucun hostel sélectionné.');
+            return $id;
+        }
+
+        abort(403, 'Authentification requise.');
+    }
+
+    /**
+     * Empêche un owner/manager de modifier la demande d'un autre hostel.
+     */
+    private function authorizeAccess(ContactRequest $contactRequest): void
+    {
+        abort_unless(
+            $contactRequest->hostel_id === $this->currentHostelId(),
+            403,
+            'Vous n\'avez pas accès à cette demande.'
+        );
     }
 }
