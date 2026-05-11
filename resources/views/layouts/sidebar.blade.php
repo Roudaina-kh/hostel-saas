@@ -1,5 +1,8 @@
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;0,900;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+/* ═══════════════════════════════════════════════════════════════
+   SIDEBAR — Palette terra/teal/night cohérente avec la page d'accueil
+   La logique PHP est strictement identique à l'original.
+   ═══════════════════════════════════════════════════════════════ */
 
 #hf-sidebar {
     width: 17rem;
@@ -7,18 +10,21 @@
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-    position: relative;
+    position: sticky;
+    top: 0;
     z-index: 20;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    background: linear-gradient(160deg, #0D1B35 0%, #0F2548 55%, #0D1B35 100%);
-    box-shadow: 4px 0 32px rgba(0,0,0,0.25);
+    font-family: 'DM Sans', sans-serif;
+    background: linear-gradient(165deg, #1C1C24 0%, #2E3A35 40%, #1B6B6B 100%);
+    box-shadow: 4px 0 32px rgba(28,28,36,0.18);
     overflow: hidden;
 }
+
+/* Orbes ambiantes (terra + teal au lieu de orange + bleu) */
 #hf-sidebar::before {
     content: '';
     position: absolute;
     width: 280px; height: 280px;
-    background: radial-gradient(circle, rgba(249,115,22,0.18) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(200,96,42,0.22) 0%, transparent 70%);
     top: -60px; right: -60px;
     pointer-events: none;
     animation: orb-drift 6s ease-in-out infinite alternate;
@@ -27,7 +33,7 @@
     content: '';
     position: absolute;
     width: 200px; height: 200px;
-    background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(254,252,249,0.06) 0%, transparent 70%);
     bottom: 80px; left: -40px;
     pointer-events: none;
     animation: orb-drift 8s ease-in-out infinite alternate-reverse;
@@ -37,12 +43,13 @@
     to   { transform: translate(12px, 16px) scale(1.2); }
 }
 
+/* ── LOGO ── */
 .sb-logo {
     padding: 1.25rem 1.25rem 1rem;
     display: flex;
     align-items: center;
     gap: 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    border-bottom: 1px solid rgba(254,252,249,0.06);
     flex-shrink: 0;
     position: relative;
     z-index: 1;
@@ -51,27 +58,28 @@
     width: 42px; height: 42px;
     border-radius: 14px;
     object-fit: cover;
-    box-shadow: 0 4px 16px rgba(249,115,22,0.3);
-    border: 2px solid rgba(249,115,22,0.4);
+    box-shadow: 0 4px 16px rgba(200,96,42,0.30);
+    border: 2px solid rgba(200,96,42,0.40);
     transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s;
 }
 .sb-logo:hover img {
     transform: rotate(-5deg) scale(1.1);
-    box-shadow: 0 6px 24px rgba(249,115,22,0.5);
+    box-shadow: 0 6px 24px rgba(200,96,42,0.55);
 }
 .sb-logo-text { line-height: 1.15; }
 .sb-logo-name {
-    font-family: 'Fraunces', serif;
-    font-weight: 900;
-    font-size: 18px;
-    color: #FFFFFF;
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 19px;
+    color: #FEFCF9;
     letter-spacing: -0.5px;
 }
 .sb-logo-tagline {
     font-size: 10.5px;
     font-weight: 500;
-    color: rgba(249,115,22,0.85);
-    margin-top: 1px;
+    color: rgba(245,200,150,0.85);
+    margin-top: 2px;
+    font-style: italic;
 }
 
 /* ── HOSTEL SWITCHER ── */
@@ -83,8 +91,8 @@
 }
 .sb-hostel-trigger {
     width: 100%;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(254,252,249,0.05);
+    border: 1px solid rgba(254,252,249,0.08);
     border-radius: 12px;
     padding: 9px 12px;
     display: flex;
@@ -94,14 +102,14 @@
     transition: background 0.2s, border-color 0.2s;
 }
 .sb-hostel-trigger:hover {
-    background: rgba(255,255,255,0.09);
-    border-color: rgba(255,255,255,0.14);
+    background: rgba(254,252,249,0.09);
+    border-color: rgba(254,252,249,0.14);
 }
 .sb-hostel-dot {
     width: 7px; height: 7px;
     border-radius: 50%;
-    background: #4ADE80;
-    box-shadow: 0 0 8px rgba(74,222,128,0.8);
+    background: #4A8F6E;
+    box-shadow: 0 0 8px rgba(74,143,110,0.8);
     flex-shrink: 0;
     animation: blink 2s infinite;
 }
@@ -112,7 +120,7 @@
 .sb-hostel-name {
     font-size: 13px;
     font-weight: 600;
-    color: rgba(255,255,255,0.85);
+    color: rgba(254,252,249,0.85);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -120,7 +128,7 @@
 }
 .sb-hostel-chevron {
     flex-shrink: 0;
-    color: rgba(255,255,255,0.35);
+    color: rgba(254,252,249,0.35);
     transition: transform 0.25s;
     font-size: 10px;
 }
@@ -132,11 +140,11 @@
     position: absolute;
     top: calc(100% + 6px);
     left: 0; right: 0;
-    background: #0F2548;
-    border: 1px solid rgba(255,255,255,0.1);
+    background: #232330;
+    border: 1px solid rgba(254,252,249,0.10);
     border-radius: 14px;
     overflow: hidden;
-    box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    box-shadow: 0 16px 40px rgba(28,28,36,0.5);
     z-index: 100;
 }
 .sb-hostel-dropdown.open { display: block; }
@@ -146,7 +154,7 @@
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.3);
+    color: rgba(254,252,249,0.3);
 }
 .sb-hostel-option {
     display: flex;
@@ -157,23 +165,23 @@
     transition: background 0.15s;
     text-decoration: none;
 }
-.sb-hostel-option:hover { background: rgba(255,255,255,0.06); }
-.sb-hostel-option.current { background: rgba(249,115,22,0.1); }
+.sb-hostel-option:hover { background: rgba(254,252,249,0.06); }
+.sb-hostel-option.current { background: rgba(200,96,42,0.10); }
 .sb-hostel-option-dot {
     width: 6px; height: 6px; border-radius: 50%;
-    background: rgba(255,255,255,0.2); flex-shrink: 0;
+    background: rgba(254,252,249,0.2); flex-shrink: 0;
 }
-.sb-hostel-option.current .sb-hostel-option-dot { background: #4ADE80; }
+.sb-hostel-option.current .sb-hostel-option-dot { background: #4A8F6E; }
 .sb-hostel-option-name {
     font-size: 13px; font-weight: 500;
-    color: rgba(255,255,255,0.7);
+    color: rgba(254,252,249,0.7);
     flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.sb-hostel-option.current .sb-hostel-option-name { color: #FB923C; font-weight: 600; }
-.sb-hostel-option-check { font-size: 12px; color: #4ADE80; }
+.sb-hostel-option.current .sb-hostel-option-name { color: #F5C896; font-weight: 600; }
+.sb-hostel-option-check { font-size: 12px; color: #4A8F6E; }
 
 .sb-hostel-dropdown-divider {
-    height: 1px; background: rgba(255,255,255,0.06);
+    height: 1px; background: rgba(254,252,249,0.06);
     margin: 4px 0;
 }
 .sb-add-hostel-btn {
@@ -185,23 +193,24 @@
     text-decoration: none;
     transition: background 0.15s;
 }
-.sb-add-hostel-btn:hover { background: rgba(249,115,22,0.08); }
+.sb-add-hostel-btn:hover { background: rgba(200,96,42,0.08); }
 .sb-add-hostel-icon {
     width: 22px; height: 22px; border-radius: 6px;
-    background: rgba(249,115,22,0.15);
-    border: 1px solid rgba(249,115,22,0.3);
+    background: rgba(200,96,42,0.15);
+    border: 1px solid rgba(200,96,42,0.30);
     display: flex; align-items: center; justify-content: center;
     font-size: 13px; flex-shrink: 0;
+    color: #F5C896;
 }
 .sb-add-hostel-label {
-    font-size: 13px; font-weight: 600; color: #FB923C;
+    font-size: 13px; font-weight: 600; color: #F5C896;
 }
 
 /* ── PROFIL USER ── */
 .sb-user-profile {
     margin: 0.6rem 1.25rem 0;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(254,252,249,0.04);
+    border: 1px solid rgba(254,252,249,0.06);
     border-radius: 12px;
     padding: 9px 12px;
     display: flex;
@@ -213,27 +222,28 @@
 .sb-user-avatar {
     width: 30px; height: 30px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #F97316, #FBBF24);
+    background: linear-gradient(135deg, #C8602A, #E8A050);
     display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 800; color: #fff; flex-shrink: 0;
+    font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
 }
 .sb-user-name {
     font-size: 12.5px; font-weight: 600;
-    color: rgba(255,255,255,0.8);
+    color: rgba(254,252,249,0.8);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;
 }
 .sb-user-role {
-    font-size: 10px; color: rgba(249,115,22,0.75); font-weight: 600;
+    font-size: 10px; color: rgba(245,200,150,0.85); font-weight: 600;
     white-space: nowrap;
 }
 
+/* ── SECTIONS ── */
 .sb-section-label {
     padding: 1rem 1.5rem 0.4rem;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: .14em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.25);
+    color: rgba(254,252,249,0.25);
     position: relative; z-index: 1;
 }
 
@@ -246,6 +256,7 @@
 }
 #hf-sidebar nav::-webkit-scrollbar { display: none; }
 
+/* ── ITEMS ── */
 .sb-item {
     display: flex;
     align-items: center;
@@ -256,7 +267,7 @@
     text-decoration: none;
     font-size: 14px;
     font-weight: 500;
-    color: rgba(255,255,255,0.55);
+    color: rgba(254,252,249,0.55);
     position: relative;
     overflow: hidden;
     transition: color 0.25s;
@@ -266,17 +277,17 @@
 .sb-item::before {
     content: '';
     position: absolute; inset: 0;
-    background: rgba(255,255,255,0.05);
+    background: rgba(254,252,249,0.05);
     border-radius: 12px;
     transform: translateX(-110%);
     transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
 }
 .sb-item:hover::before { transform: translateX(0); }
-.sb-item:hover { color: rgba(255,255,255,0.92); border-color: rgba(255,255,255,0.07); }
+.sb-item:hover { color: rgba(254,252,249,0.92); border-color: rgba(254,252,249,0.07); }
 .sb-item.active {
-    background: rgba(249,115,22,0.12);
-    border-color: rgba(249,115,22,0.25);
-    color: #FB923C;
+    background: rgba(200,96,42,0.12);
+    border-color: rgba(200,96,42,0.28);
+    color: #F5C896;
     font-weight: 600;
 }
 .sb-item.active::before { transform: translateX(0); background: transparent; }
@@ -286,49 +297,50 @@
     left: 0; top: 20%; bottom: 20%;
     width: 3px;
     border-radius: 0 3px 3px 0;
-    background: linear-gradient(180deg, #F97316, #FBBF24);
-    box-shadow: 0 0 12px rgba(249,115,22,0.6);
+    background: linear-gradient(180deg, #C8602A, #E8A050);
+    box-shadow: 0 0 12px rgba(200,96,42,0.6);
 }
 .sb-icon {
     width: 32px; height: 32px;
     border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
     font-size: 16px; flex-shrink: 0;
-    background: rgba(255,255,255,0.04);
+    background: rgba(254,252,249,0.04);
     transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), background 0.25s;
 }
-.sb-item:hover .sb-icon { transform: scale(1.18) rotate(-5deg); background: rgba(255,255,255,0.08); }
-.sb-item.active .sb-icon { background: rgba(249,115,22,0.18); transform: scale(1.08); }
+.sb-item:hover .sb-icon { transform: scale(1.18) rotate(-5deg); background: rgba(254,252,249,0.08); }
+.sb-item.active .sb-icon { background: rgba(200,96,42,0.20); transform: scale(1.08); }
 
 .sb-soon {
     display: flex; align-items: center; gap: 11px;
     padding: 9px 14px; border-radius: 12px; margin-bottom: 3px;
     opacity: 0.35; cursor: not-allowed;
-    font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.5);
+    font-size: 14px; font-weight: 500; color: rgba(254,252,249,0.5);
 }
 .sb-soon-badge {
     margin-left: auto; font-size: 9.5px; font-weight: 700;
     letter-spacing: .08em; padding: 2px 8px; border-radius: 99px;
-    background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.4);
+    background: rgba(254,252,249,0.08); color: rgba(254,252,249,0.4);
 }
 
+/* ── LOGOUT ── */
 .sb-logout-wrap {
     flex-shrink: 0;
     padding: 0.875rem 1.25rem;
-    border-top: 1px solid rgba(255,255,255,0.06);
+    border-top: 1px solid rgba(254,252,249,0.06);
     position: relative; z-index: 1;
 }
 .sb-logout-btn {
     display: flex; align-items: center; gap: 10px;
     padding: 10px 14px; border-radius: 12px;
-    background: rgba(239,68,68,0.08);
-    border: 1px solid rgba(239,68,68,0.15);
+    background: rgba(168,78,32,0.12);
+    border: 1px solid rgba(168,78,32,0.25);
     cursor: pointer; transition: all 0.25s; width: 100%;
 }
-.sb-logout-btn:hover { background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.3); transform: translateX(3px); }
-.sb-logout-btn svg { color: #F87171; flex-shrink: 0; transition: transform 0.3s; }
+.sb-logout-btn:hover { background: rgba(168,78,32,0.22); border-color: rgba(168,78,32,0.4); transform: translateX(3px); }
+.sb-logout-btn svg { color: #E89070; flex-shrink: 0; transition: transform 0.3s; }
 .sb-logout-btn:hover svg { transform: translateX(3px); }
-.sb-logout-btn span { font-size: 13.5px; font-weight: 600; color: #F87171; }
+.sb-logout-btn span { font-size: 13.5px; font-weight: 600; color: #E89070; }
 </style>
 
 <aside id="hf-sidebar">
@@ -504,12 +516,12 @@
     <div style="margin: 0.4rem 1.25rem 0; position:relative; z-index:1;">
         <a href="{{ route('hostels.create') }}"
            style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;
-                  background:rgba(249,115,22,0.08);border:1px dashed rgba(249,115,22,0.25);
+                  background:rgba(200,96,42,0.08);border:1px dashed rgba(200,96,42,0.25);
                   text-decoration:none;transition:all 0.2s;"
-           onmouseover="this.style.background='rgba(249,115,22,0.15)'"
-           onmouseout="this.style.background='rgba(249,115,22,0.08)'">
-            <span style="font-size:12px;color:rgba(249,115,22,0.7)">+</span>
-            <span style="font-size:11.5px;font-weight:600;color:rgba(249,115,22,0.7)">Ajouter un hostel</span>
+           onmouseover="this.style.background='rgba(200,96,42,0.18)'"
+           onmouseout="this.style.background='rgba(200,96,42,0.08)'">
+            <span style="font-size:12px;color:rgba(245,200,150,0.85)">+</span>
+            <span style="font-size:11.5px;font-weight:600;color:rgba(245,200,150,0.85)">Ajouter un hostel</span>
         </a>
     </div>
     @endif
@@ -574,7 +586,6 @@ function toggleHostelDropdown() {
     const trigger  = document.getElementById('hostelTrigger');
     const dropdown = document.getElementById('hostelDropdown');
     if (!dropdown) return;
-    const isOpen = dropdown.classList.contains('open');
     dropdown.classList.toggle('open');
     trigger.classList.toggle('open');
 }

@@ -355,21 +355,73 @@
     }
 
     /* ── FOOTER ── */
-    footer {
-        background: var(--night); color: rgba(255,255,255,0.6);
-        padding: 60px 3rem 30px;
-    }
-    .footer-inner { max-width: 1100px; margin: 0 auto; }
-    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 3rem; margin-bottom: 2.5rem; }
-    .footer-logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; color: #fff; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
-    .footer-logo img { height: 32px; filter: brightness(0) invert(1); }
-    .footer-tagline { font-size: 0.83rem; line-height: 1.75; max-width: 260px; }
-    .footer-col-title { font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: #fff; margin-bottom: 1rem; }
-    .footer-links { list-style: none; display: flex; flex-direction: column; gap: 7px; }
-    .footer-links a { font-size: 0.82rem; color: rgba(255,255,255,0.55); text-decoration: none; transition: color 0.2s; }
-    .footer-links a:hover { color: var(--terra); }
-    .footer-bottom { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-    .footer-copy { font-size: 0.77rem; color: rgba(255,255,255,0.3); }
+/* ── FOOTER (terra plein) ── */
+footer {
+    background: var(--terra);
+    color: rgba(254, 252, 249, 0.85);
+    padding: 60px 3rem 30px;
+    position: relative;
+    overflow: hidden;
+}
+footer::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(254,252,249,0.35), transparent);
+}
+footer::after {
+    content: '';
+    position: absolute;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(254,252,249,0.08) 0%, transparent 70%);
+    top: -150px; right: -100px;
+    pointer-events: none;
+}
+.footer-inner { max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 3rem; margin-bottom: 2.5rem; }
+.footer-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem; font-weight: 700;
+    color: var(--white);
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 10px;
+    letter-spacing: -0.5px;
+}
+.footer-logo img { height: 36px; filter: brightness(0) invert(1); }
+.footer-tagline {
+    font-size: 0.85rem; line-height: 1.75;
+    max-width: 280px;
+    color: rgba(254, 252, 249, 0.75);
+}
+.footer-col-title {
+    font-weight: 700; font-size: 0.78rem;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--white);
+    margin-bottom: 1.1rem;
+}
+.footer-links { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.footer-links a {
+    font-size: 0.85rem;
+    color: rgba(254, 252, 249, 0.75);
+    text-decoration: none;
+    transition: color 0.2s, transform 0.2s;
+    display: inline-block;
+}
+.footer-links a:hover {
+    color: #F5C896;
+    transform: translateX(4px);
+}
+.footer-bottom {
+    border-top: 1px solid rgba(254, 252, 249, 0.18);
+    padding-top: 20px;
+    display: flex; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px;
+}
+.footer-copy {
+    font-size: 0.78rem;
+    color: rgba(254, 252, 249, 0.6);
+}
 
     /* ── ANIMATIONS ── */
     @keyframes fadeUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
@@ -688,8 +740,7 @@
                     <li><a href="{{ route('owner.login') }}">Connexion propriétaire</a></li>
                     <li><a href="{{ route('register') }}">Publier mon hostel</a></li>
                     <li><a href="{{ route('user.login') }}">Connexion équipe</a></li>
-                    <li><a href="{{ route('super-admin.login') }}" style="color:rgba(255,255,255,0.2);font-size:0.75rem">🛡 Admin</a></li>
-                </ul>
+                    <li><a href="{{ route('super-admin.login') }}" style="color:rgba(254,252,249,0.45);font-size:0.78rem">🛡 Admin</a></li>                </ul>
             </div>
         </div>
         <div class="footer-bottom">

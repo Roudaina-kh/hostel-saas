@@ -4,107 +4,405 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion Équipe — HostelFlow</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .glass-card { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border: 1px solid rgba(226,232,240,0.8); }
-        .input-focus { transition: all 0.3s; }
-        .input-focus:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59,130,246,0.1); background: white; }
-        .btn-gradient { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); transition: transform 0.2s; }
-        .btn-gradient:hover { transform: translateY(-1px); }
-        .fade-up { animation: fadeUp 0.6s ease-out forwards; opacity: 0; }
-        @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-        .bg-login {
-            position: fixed; top:0; left:0; width:100%; height:100%;
-            background: linear-gradient(rgba(15,23,42,0.5), rgba(15,23,42,0.7));
-            background-color: #1e293b;
-            z-index: -1;
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --terra:   #C8602A;
+            --teal:    #1B6B6B;
+            --teal2:   #134F4F;
+            --teal-glow: #4A9A9A;
+            --sand:    #F5EFE6;
+            --night:   #1C1C24;
+            --white:   #FEFCF9;
+            --cream:   #A8D8D4;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(165deg, #1C1C24 0%, #2E3A35 40%, #1B6B6B 100%);
+            position: relative;
+            overflow: hidden;
+            color: var(--white);
+            padding: 2rem 1rem;
+        }
+
+        /* ── Orbes ambiantes ── */
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(110px);
+            pointer-events: none;
+            animation: floatBlob 16s ease-in-out infinite alternate;
+            z-index: 2;
+        }
+        .blob-1 { width: 600px; height: 600px; background: rgba(27, 107, 107, 0.45); top: -15%; left: -10%; }
+        .blob-2 { width: 500px; height: 500px; background: rgba(200, 96, 42, 0.20); bottom: -15%; right: -10%; animation-delay: -8s; }
+        .blob-3 { width: 320px; height: 320px; background: rgba(254, 252, 249, 0.04); top: 50%; right: 30%; animation-delay: -4s; }
+        @keyframes floatBlob {
+            0%   { transform: translate(0,0) scale(1); }
+            100% { transform: translate(20px, -20px) scale(1.08); }
+        }
+
+        /* ── ✨ Watermark "Hostel...flow" ── */
+        .bg-watermark {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-weight: 700;
+            font-size: 11rem;
+            color: rgba(200, 96, 42, 0.07);
+            letter-spacing: -4px;
+            line-height: 1;
+            pointer-events: none;
+            user-select: none;
+            z-index: 1;
+            white-space: nowrap;
+        }
+        .bg-watermark-left  { left: 4%; }
+        .bg-watermark-right { right: 4%; }
+
+        @media (max-width: 1400px) {
+            .bg-watermark { font-size: 8.5rem; }
+        }
+        @media (max-width: 1100px) {
+            .bg-watermark { font-size: 6.5rem; }
+            .bg-watermark-left  { left: 2%; }
+            .bg-watermark-right { right: 2%; }
+        }
+        @media (max-width: 900px) {
+            .bg-watermark { display: none; }
+        }
+
+        .page-wrapper { position: relative; z-index: 10; width: 100%; max-width: 460px; }
+
+        .header-block { text-align: center; margin-bottom: 28px; }
+
+        .logo-circle {
+            width: 96px;
+            height: 96px;
+            margin: 0 auto 24px;
+            border-radius: 50%;
+            background: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow:
+                0 12px 40px rgba(27, 107, 107, 0.45),
+                0 0 0 1px rgba(254, 252, 249, 0.4);
+            animation: logo-float 4s ease-in-out infinite;
+        }
+        @keyframes logo-float {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-6px); }
+        }
+        .logo-circle::before {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 1px solid rgba(168, 216, 212, 0.30);
+            animation: logo-pulse 2.5s ease-in-out infinite;
+        }
+        @keyframes logo-pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50%      { transform: scale(1.08); opacity: 0.5; }
+        }
+        .logo-circle img { width: 64px; height: 64px; object-fit: contain; border-radius: 16px; }
+        .logo-fallback {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 28px;
+            color: var(--teal);
+        }
+
+        .header-block h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--white);
+            line-height: 1.15;
+            letter-spacing: -0.5px;
+        }
+        .header-block h1 em {
+            font-style: italic;
+            color: var(--cream);
+            font-weight: 600;
+        }
+
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 14px;
+            padding: 7px 18px;
+            border-radius: 99px;
+            background: rgba(27, 107, 107, 0.30);
+            border: 1px solid rgba(168, 216, 212, 0.40);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            color: var(--cream);
+            text-transform: uppercase;
+            backdrop-filter: blur(8px);
+        }
+        .role-badge-icon { font-size: 14px; }
+
+        .card {
+            background: rgba(254, 252, 249, 0.06);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(254, 252, 249, 0.12);
+            border-radius: 24px;
+            padding: 36px 32px;
+            box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.4);
+        }
+
+        .fade-up { opacity: 0; transform: translateY(18px); animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+        .d1 { animation-delay: 0ms; }
+        .d2 { animation-delay: 100ms; }
+        .d3 { animation-delay: 200ms; }
+        .d4 { animation-delay: 300ms; }
+        .d5 { animation-delay: 400ms; }
+        .d6 { animation-delay: 500ms; }
+
+        .error-banner {
+            background: rgba(168, 78, 32, 0.18);
+            border: 1px solid rgba(168, 78, 32, 0.35);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 18px;
+            font-size: 13px;
+            color: #FFB8A0;
+            font-weight: 500;
+        }
+
+        .form-group { margin-bottom: 16px; }
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(254, 252, 249, 0.85);
+            margin-bottom: 8px;
+            padding-left: 4px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 16px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--white);
+            background: rgba(254, 252, 249, 0.06);
+            border: 1px solid rgba(254, 252, 249, 0.14);
+            border-radius: 12px;
+            outline: none;
+            transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+        }
+        .input-field::placeholder { color: rgba(254, 252, 249, 0.35); font-weight: 400; }
+        .input-field:focus {
+            border-color: var(--teal-glow);
+            background: rgba(254, 252, 249, 0.10);
+            box-shadow: 0 0 0 4px rgba(74, 154, 154, 0.20);
+        }
+
+        .row-opts { display: flex; align-items: center; margin-bottom: 22px; }
+        .remember-label {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13px; font-weight: 500;
+            color: rgba(254, 252, 249, 0.7);
+            cursor: pointer;
+        }
+        .remember-label input[type="checkbox"] {
+            width: 16px; height: 16px;
+            accent-color: var(--teal-glow);
+            cursor: pointer;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px 20px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            color: var(--white);
+            background: linear-gradient(135deg, var(--teal) 0%, var(--teal-glow) 100%);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(27, 107, 107, 0.45);
+            transition: transform 0.25s, box-shadow 0.25s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(27, 107, 107, 0.60);
+        }
+        .btn-submit::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.20) 50%, transparent 70%);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+        .btn-submit:hover::after { transform: translateX(100%); }
+        .btn-submit svg { width: 16px; height: 16px; transition: transform 0.25s; }
+        .btn-submit:hover svg { transform: translateX(4px); }
+
+        .divider {
+            display: flex; align-items: center; gap: 12px;
+            margin: 24px 0 16px;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(254, 252, 249, 0.15), transparent);
+        }
+        .divider span {
+            font-size: 11px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.12em;
+            color: rgba(254, 252, 249, 0.4);
+        }
+
+        .footer-links {
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(254, 252, 249, 0.55);
+            margin-bottom: 8px;
+        }
+        .footer-links a {
+            color: var(--cream);
+            font-weight: 600;
+            text-decoration: none;
+            margin-left: 4px;
+            transition: color 0.2s;
+        }
+        .footer-links a:hover { color: var(--white); }
+
+        .copyright {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 11px;
+            color: rgba(254, 252, 249, 0.3);
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 480px) {
+            .card { padding: 28px 22px; }
+            .header-block h1 { font-size: 1.6rem; }
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-6">
-    <div class="bg-login"></div>
+<body>
 
-    {{-- ✅ Bouton retour accueil — à l'intérieur du body --}}
-    <a href="{{ url('/') }}"
-       style="position:fixed;top:20px;left:24px;z-index:999;display:flex;align-items:center;gap:8px;
-              background:rgba(255,255,255,0.95);border:1px solid #E8DDD0;border-radius:24px;
-              padding:8px 16px 8px 10px;text-decoration:none;font-size:0.82rem;font-weight:600;
-              color:#2C2C2C;box-shadow:0 4px 16px rgba(0,0,0,0.08);backdrop-filter:blur(8px);"
-       onmouseover="this.style.borderColor='#FF6B47';this.style.color='#FF6B47'"
-       onmouseout="this.style.borderColor='#E8DDD0';this.style.color='#2C2C2C'">
-        <img src="{{ asset('images/13.png') }}" alt="HostelFlow"
-             style="height:28px;width:auto;object-fit:contain" onerror="this.style.display='none'">
-        Accueil
-    </a>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
 
-    <div class="max-w-[440px] w-full fade-up">
+    {{-- ✨ Watermark "Hostel...flow" en arrière-plan --}}
+    <div class="bg-watermark bg-watermark-left">Hostel</div>
+    <div class="bg-watermark bg-watermark-right">flow</div>
 
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center p-4 bg-white rounded-3xl shadow-xl mb-6 ring-1 ring-slate-200">
-                <img src="{{ asset('images/13.png') }}" alt="HostelFlow" class="h-14 w-auto object-contain"
-                     onerror="this.style.display='none'">
+    <div class="page-wrapper">
+
+        {{-- ── Header (logo + titre + badge) ─────────────────────── --}}
+        <div class="header-block fade-up d1">
+            <div class="logo-circle">
+                <img src="{{ asset('images/13.png') }}"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                     alt="Logo HostelFlow">
+                <span class="logo-fallback" style="display:none;">HF</span>
             </div>
-            <h1 class="text-3xl font-extrabold text-white tracking-tight mb-2">Espace Équipe</h1>
-            <p class="text-slate-400 font-medium">Manager · Staff · Financial</p>
+
+            <h1>Espace <em>équipe</em></h1>
+
+            <div class="role-badge">
+                <span class="role-badge-icon">👥</span>
+                <span>Manager · Staff · Financier</span>
+            </div>
         </div>
 
-        <div class="glass-card rounded-[32px] p-10 shadow-2xl">
+        {{-- ── Card formulaire ─────────────────────────────────────── --}}
+        <div class="card fade-up d2">
 
             @if($errors->any())
-                <div class="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3">
-                    <span class="text-red-500 text-xl">⚠️</span>
-                    <div class="text-sm font-bold text-red-600">
-                        @foreach ($errors->all() as $error)
-                            <p>{{ $error }}</p>
-                        @endforeach
-                    </div>
-                </div>
+            <div class="error-banner">
+                @foreach($errors->all() as $e)<p>→ {{ $e }}</p>@endforeach
+            </div>
             @endif
 
-            <form action="{{ route('user.login.store') }}" method="POST" class="space-y-5">
+            <form method="POST" action="{{ route('user.login.store') }}">
                 @csrf
 
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">Adresse Email</label>
-                    <input type="email" name="email" value="{{ old('email') }}" required autofocus
-                           placeholder="nom@exemple.com"
-                           class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-slate-900 font-medium outline-none input-focus placeholder:text-slate-400">
+                <div class="form-group fade-up d3">
+                    <label class="form-label" for="email">Adresse email</label>
+                    <input id="email" class="input-field" type="email"
+                           name="email" value="{{ old('email') }}"
+                           placeholder="vous@hostelflow.com"
+                           required autocomplete="email">
                 </div>
 
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">Mot de passe</label>
-                    <input type="password" name="password" required
-                           placeholder="••••••••"
-                           class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-slate-900 font-medium outline-none input-focus placeholder:text-slate-400">
+                <div class="form-group fade-up d4">
+                    <label class="form-label" for="password">Mot de passe</label>
+                    <input id="password" class="input-field" type="password"
+                           name="password" placeholder="••••••••"
+                           required autocomplete="current-password">
                 </div>
 
-                <div class="flex items-center gap-2">
-                    <input type="checkbox" name="remember" id="remember" class="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer">
-                    <label for="remember" class="text-xs font-bold text-slate-500 cursor-pointer">Se souvenir de moi</label>
+                <div class="row-opts fade-up d5">
+                    <label class="remember-label">
+                        <input type="checkbox" name="remember">
+                        Se souvenir de moi
+                    </label>
                 </div>
 
-                <button type="submit" class="w-full btn-gradient py-4 rounded-2xl text-white font-bold text-lg shadow-lg active:scale-[0.98] transition-all">
-                    Se connecter →
+                <button type="submit" class="btn-submit fade-up d5">
+                    Accéder à mon dashboard
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                    </svg>
                 </button>
             </form>
 
-            <div class="mt-8 pt-6 border-t border-slate-100 text-center space-y-2">
-                <p class="text-sm text-slate-500">
-                    Vous êtes propriétaire ?
-                    <a href="{{ route('owner.login') }}" class="text-blue-600 font-bold hover:underline ml-1">Connexion propriétaire</a>
-                </p>
-                <p class="text-sm text-slate-500">
-                    Administration ?
-                    <a href="{{ route('super-admin.login') }}" class="text-blue-600 font-bold hover:underline ml-1">Super Admin</a>
-                </p>
-            </div>
+            <div class="divider fade-up d6"><span>Autres accès</span></div>
+
+            <p class="footer-links fade-up d6">
+                Vous êtes propriétaire ?
+                <a href="{{ route('owner.login') }}">Connexion propriétaire</a>
+            </p>
+            <p class="footer-links fade-up d6">
+                Administration ?
+                <a href="{{ route('super-admin.login') }}">Super Admin</a>
+            </p>
+
         </div>
 
-        <div class="mt-6 text-center">
-            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">HostelFlow © 2026</p>
-        </div>
+        <p class="copyright fade-up d6">HostelFlow © {{ date('Y') }}</p>
+
     </div>
 
 </body>

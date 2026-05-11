@@ -6,225 +6,458 @@
     <title>Connexion Propriétaire — HostelFlow</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --white:     #FFFFFF;
-            --beige-100: #FAF6F0;
-            --beige-200: #F5EAE0;
-            --beige-300: #EAD8C8;
-            --navy-900:  #1A2B3C;
-            --navy-700:  #1A4A6B;
-            --teal-600:  #2C6E8A;
-            --gray-400:  #8A9BB0;
-            --gray-300:  #E8EEF2;
-            --input-bg:  #F8FBFD;
+            --terra:   #C8602A;
+            --terra2:  #A84E20;
+            --terra-soft: rgba(200, 96, 42, 0.15);
+            --teal:    #1B6B6B;
+            --teal2:   #134F4F;
+            --sand:    #F5EFE6;
+            --night:   #1C1C24;
+            --white:   #FEFCF9;
+            --cream:   #F5C896;
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'DM Sans', sans-serif;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(145deg, var(--white) 0%, var(--beige-100) 45%, var(--beige-200) 100%);
+            background: linear-gradient(165deg, #1C1C24 0%, #2E3A35 40%, #1B6B6B 100%);
             position: relative;
             overflow: hidden;
-            color: var(--navy-900);
+            color: var(--white);
+            padding: 2rem 1rem;
         }
 
+        /* ── Orbes ambiantes flottantes ── */
         .blob {
             position: absolute;
             border-radius: 50%;
-            filter: blur(90px);
+            filter: blur(110px);
             pointer-events: none;
-            animation: floatBlob 14s ease-in-out infinite alternate;
+            animation: floatBlob 16s ease-in-out infinite alternate;
         }
-        .blob-1 { width:550px; height:550px; background:rgba(255,255,255,0.9); top:-15%; left:-12%; animation-delay:0s; }
-        .blob-2 { width:650px; height:650px; background:var(--beige-300); bottom:-22%; right:-12%; opacity:0.55; animation-delay:-7s; }
+        .blob-1 { width: 600px; height: 600px; background: rgba(200, 96, 42, 0.30); top: -15%; right: -10%; }
+        .blob-2 { width: 500px; height: 500px; background: rgba(27, 107, 107, 0.25); bottom: -15%; left: -10%; animation-delay: -8s; }
+        .blob-3 { width: 320px; height: 320px; background: rgba(254, 252, 249, 0.04); top: 50%; left: 40%; animation-delay: -4s; }
         @keyframes floatBlob {
-            0%   { transform: translateY(0) scale(1); }
-            100% { transform: translateY(-28px) scale(1.06); }
+            0%   { transform: translate(0,0) scale(1); }
+            100% { transform: translate(20px, -20px) scale(1.08); }
         }
 
-        .page-wrapper { position:relative; z-index:10; width:100%; max-width:440px; padding:24px 20px; }
+        /* ── Page wrapper ── */
+        .page-wrapper {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 460px;
+        }
 
+        /* ── Header (logo + titre + badge) — au-dessus du card ── */
+        .header-block {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        /* ── Cercle blanc avec logo ── */
+        .logo-circle {
+            width: 96px;
+            height: 96px;
+            margin: 0 auto 24px;
+            border-radius: 50%;
+            background: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow:
+                0 12px 40px rgba(200, 96, 42, 0.35),
+                0 0 0 1px rgba(254, 252, 249, 0.4);
+            animation: logo-float 4s ease-in-out infinite;
+        }
+        @keyframes logo-float {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-6px); }
+        }
+        .logo-circle::before {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 1px solid rgba(245, 200, 150, 0.25);
+            animation: logo-pulse 2.5s ease-in-out infinite;
+        }
+        @keyframes logo-pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50%      { transform: scale(1.08); opacity: 0.5; }
+        }
+        .logo-circle img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            border-radius: 16px;
+        }
+        .logo-fallback {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 28px;
+            color: var(--terra);
+        }
+
+        /* ── Titre ── */
+        .header-block h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--white);
+            line-height: 1.15;
+            letter-spacing: -0.5px;
+        }
+        .header-block h1 em {
+            font-style: italic;
+            color: var(--cream);
+            font-weight: 600;
+        }
+
+        /* ── Pill badge ── */
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 14px;
+            padding: 7px 18px;
+            border-radius: 99px;
+            background: rgba(200, 96, 42, 0.22);
+            border: 1px solid rgba(200, 96, 42, 0.45);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            color: var(--cream);
+            text-transform: uppercase;
+            backdrop-filter: blur(8px);
+        }
+        .role-badge-icon { font-size: 14px; }
+
+        /* ── Card glassmorphism ── */
         .card {
-            background: rgba(255,255,255,0.88);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255,255,255,0.75);
-            border-radius: 32px;
-            padding: 48px 44px 44px;
-            box-shadow: 0 24px 48px -12px rgba(0,0,0,0.07), 0 0 0 1px rgba(255,255,255,0.6) inset;
-            transition: box-shadow 0.4s ease;
+            background: rgba(254, 252, 249, 0.06);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(254, 252, 249, 0.12);
+            border-radius: 24px;
+            padding: 36px 32px;
+            box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.4);
         }
-        .card:hover { box-shadow: 0 32px 64px -12px rgba(0,0,0,0.12), 0 0 0 1px rgba(255,255,255,0.6) inset; }
 
-        .fade-up { opacity:0; transform:translateY(18px); animation:fadeUp 0.75s cubic-bezier(0.16,1,0.3,1) forwards; }
-        @keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
-        .d1{animation-delay:0ms} .d2{animation-delay:120ms} .d3{animation-delay:220ms}
-        .d4{animation-delay:320ms} .d5{animation-delay:420ms} .d6{animation-delay:500ms}
+        /* ── Animations entrée ── */
+        .fade-up { opacity: 0; transform: translateY(18px); animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+        .d1 { animation-delay: 0ms; }
+        .d2 { animation-delay: 100ms; }
+        .d3 { animation-delay: 200ms; }
+        .d4 { animation-delay: 300ms; }
+        .d5 { animation-delay: 400ms; }
+        .d6 { animation-delay: 500ms; }
 
-        .logo-ring {
-            width:96px; height:96px; margin:0 auto 28px;
-            border-radius:50%; background:var(--white);
-            border:4px solid rgba(255,255,255,0.9);
-            box-shadow:0 8px 30px rgba(0,0,0,0.08);
-            overflow:hidden; display:flex; align-items:center; justify-content:center;
-            transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1);
-        }
-        .logo-ring:hover { transform:scale(1.1) rotate(-3deg); }
-        .logo-ring img { width:100%; height:100%; object-fit:cover; }
-        .logo-fallback { font-size:26px; font-weight:900; letter-spacing:-1px; color:var(--navy-700); }
-
-        .header { text-align:center; margin-bottom:36px; }
-        .header h1 { font-size:28px; font-weight:800; letter-spacing:-0.5px; color:var(--navy-900); line-height:1.2; }
-        .header h1 span.accent {
-            background:linear-gradient(135deg, var(--navy-700), var(--teal-600));
-            -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-        }
-        .header p { margin-top:8px; font-size:13.5px; font-weight:500; color:var(--gray-400); }
-
+        /* ── Erreurs ── */
         .error-banner {
-            background:#FEF2F2; border-left:4px solid #EF4444;
-            border-radius:0 12px 12px 0; padding:14px 16px;
-            margin-bottom:20px; font-size:13px; color:#DC2626;
+            background: rgba(168, 78, 32, 0.18);
+            border: 1px solid rgba(168, 78, 32, 0.35);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 18px;
+            font-size: 13px;
+            color: #FFB8A0;
+            font-weight: 500;
         }
-        .error-banner p { font-weight:600; }
+        .error-banner p { margin: 0; }
 
-        .form-group { margin-bottom:18px; }
-        .form-label { display:block; font-size:13px; font-weight:700; color:var(--navy-900); margin-bottom:8px; padding-left:4px; }
-        .input-wrap { position:relative; }
-        .input-icon {
-            position:absolute; top:50%; left:16px; transform:translateY(-50%);
-            width:18px; height:18px; color:#b0bec8; pointer-events:none; transition:color 0.25s;
+        /* ── Form ── */
+        .form-group { margin-bottom: 16px; }
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(254, 252, 249, 0.85);
+            margin-bottom: 8px;
+            padding-left: 4px;
         }
-        .input-wrap:focus-within .input-icon { color:var(--teal-600); }
+
         .input-field {
-            width:100%; padding:14px 16px 14px 44px;
-            font-size:14px; font-weight:500; font-family:inherit;
-            color:var(--navy-900); background:var(--input-bg);
-            border:1.5px solid var(--gray-300); border-radius:16px; outline:none;
-            transition:border-color 0.25s, background 0.25s, box-shadow 0.25s;
+            width: 100%;
+            padding: 12px 16px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--white);
+            background: rgba(254, 252, 249, 0.06);
+            border: 1px solid rgba(254, 252, 249, 0.14);
+            border-radius: 12px;
+            outline: none;
+            transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
         }
-        .input-field::placeholder { color:#b0bec8; font-weight:400; }
-        .input-field:focus { border-color:var(--teal-600); background:var(--white); box-shadow:0 0 0 4px rgba(44,110,138,0.09); }
+        .input-field::placeholder {
+            color: rgba(254, 252, 249, 0.35);
+            font-weight: 400;
+        }
+        .input-field:focus {
+            border-color: var(--terra);
+            background: rgba(254, 252, 249, 0.10);
+            box-shadow: 0 0 0 4px rgba(200, 96, 42, 0.18);
+        }
 
-        .row-opts { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
-        .remember-label { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:500; color:#5A6B7A; cursor:pointer; user-select:none; }
-        .remember-label input[type="checkbox"] { width:16px; height:16px; accent-color:var(--teal-600); cursor:pointer; }
+        /* ── Remember me ── */
+        .row-opts {
+            display: flex;
+            align-items: center;
+            margin-bottom: 22px;
+        }
+        .remember-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(254, 252, 249, 0.7);
+            cursor: pointer;
+        }
+        .remember-label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--terra);
+            cursor: pointer;
+        }
 
+        /* ── Bouton submit ── */
         .btn-submit {
-            width:100%; padding:15px 20px;
-            font-size:14px; font-weight:700; font-family:inherit;
-            letter-spacing:0.3px; color:var(--white);
-            background:linear-gradient(135deg, var(--navy-700) 0%, var(--teal-600) 100%);
-            border:none; border-radius:16px; cursor:pointer;
-            position:relative; overflow:hidden;
-            box-shadow:0 6px 20px rgba(44,110,138,0.28);
-            transition:transform 0.25s ease, box-shadow 0.25s ease;
-            display:flex; align-items:center; justify-content:center; gap:8px;
+            width: 100%;
+            padding: 14px 20px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            color: var(--white);
+            background: linear-gradient(135deg, var(--terra) 0%, #E8852A 100%);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(200, 96, 42, 0.40);
+            transition: transform 0.25s, box-shadow 0.25s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
-        .btn-submit:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(44,110,138,0.38); }
-        .btn-submit:active { transform:translateY(0); }
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(200, 96, 42, 0.55);
+        }
         .btn-submit::after {
-            content:''; position:absolute; inset:0;
-            background:linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.12) 50%, transparent 70%);
-            transform:translateX(-100%); transition:transform 0.5s ease;
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.20) 50%, transparent 70%);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
         }
-        .btn-submit:hover::after { transform:translateX(100%); }
-        .btn-submit svg { width:16px; height:16px; transition:transform 0.25s; }
-        .btn-submit:hover svg { transform:translateX(4px); }
+        .btn-submit:hover::after { transform: translateX(100%); }
+        .btn-submit svg {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.25s;
+        }
+        .btn-submit:hover svg { transform: translateX(4px); }
 
+        /* ── Divider ── */
         .divider {
-            display:flex; align-items:center; gap:12px; margin:28px 0 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 24px 0 16px;
         }
-        .divider::before,.divider::after { content:''; flex:1; height:1px; background:linear-gradient(to right, transparent, var(--gray-300), transparent); }
-        .divider span { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#b0bec8; }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(254, 252, 249, 0.15), transparent);
+        }
+        .divider span {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: rgba(254, 252, 249, 0.4);
+        }
 
-        .footer-text { text-align:center; font-size:13px; font-weight:500; color:#5A6B7A; margin-top:0; }
-        .footer-text a { font-weight:700; color:var(--teal-600); text-decoration:none; margin-left:4px; transition:color 0.2s; }
-        .footer-text a:hover { color:var(--navy-700); text-decoration:underline; }
+        /* ── Footer text ── */
+        .footer-text {
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(254, 252, 249, 0.55);
+        }
+        .footer-text a {
+            color: var(--cream);
+            font-weight: 600;
+            text-decoration: none;
+            margin-left: 4px;
+            transition: color 0.2s;
+        }
+        .footer-text a:hover {
+            color: var(--terra);
+        }
 
-        @media (max-width:480px) { .card { padding:36px 24px 32px; } .header h1 { font-size:24px; } }
+        /* ── Bottom copyright ── */
+        .copyright {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 11px;
+            color: rgba(254, 252, 249, 0.3);
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        /* ── Bouton retour accueil ── */
+        .home-btn {
+            position: fixed;
+            top: 20px;
+            left: 24px;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(254, 252, 249, 0.08);
+            border: 1px solid rgba(254, 252, 249, 0.14);
+            border-radius: 99px;
+            padding: 8px 16px 8px 10px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(254, 252, 249, 0.85);
+            backdrop-filter: blur(12px);
+            transition: all 0.25s;
+        }
+        .home-btn:hover {
+            background: rgba(200, 96, 42, 0.18);
+            border-color: rgba(200, 96, 42, 0.4);
+            color: var(--cream);
+        }
+        .home-btn img {
+            height: 22px;
+            width: auto;
+            border-radius: 6px;
+        }
+
+        @media (max-width: 480px) {
+            .card { padding: 28px 22px; }
+            .header-block h1 { font-size: 1.6rem; }
+            .home-btn span { display: none; }
+        }
+        /* ── Watermark "Hostel...flow" en arrière-plan ── */
+.bg-watermark {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 11rem;
+    color: rgba(200, 96, 42, 0.07);
+    letter-spacing: -4px;
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+    z-index: 1;
+    white-space: nowrap;
+}
+.bg-watermark-left  { left: 4%; }
+.bg-watermark-right { right: 4%; }
+
+@media (max-width: 1400px) {
+    .bg-watermark { font-size: 8.5rem; }
+}
+@media (max-width: 1100px) {
+    .bg-watermark { font-size: 6.5rem; }
+    .bg-watermark-left  { left: 2%; }
+    .bg-watermark-right { right: 2%; }
+}
+@media (max-width: 900px) {
+    .bg-watermark { display: none; }
+}
     </style>
 </head>
 <body>
 
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
 
-    {{-- ✅ Bouton retour accueil --}}
-    <a href="{{ url('/') }}"
-       style="position:fixed;top:20px;left:24px;z-index:999;display:flex;align-items:center;gap:8px;
-              background:rgba(255,255,255,0.95);border:1px solid #E8DDD0;border-radius:24px;
-              padding:8px 16px 8px 10px;text-decoration:none;font-size:0.82rem;font-weight:600;
-              color:#2C2C2C;box-shadow:0 4px 16px rgba(0,0,0,0.08);backdrop-filter:blur(8px);"
-       onmouseover="this.style.borderColor='#FF6B47';this.style.color='#FF6B47'"
-       onmouseout="this.style.borderColor='#E8DDD0';this.style.color='#2C2C2C'">
-        <img src="{{ asset('images/13.png') }}" alt="HostelFlow"
-             style="height:28px;width:auto;object-fit:contain" onerror="this.style.display='none'">
-        Accueil
+{{-- ✨ Watermark "Hostel...flow" en arrière-plan --}}
+<div class="bg-watermark bg-watermark-left">Hostel</div>
+<div class="bg-watermark bg-watermark-right">flow</div>
+
+<div class="page-wrapper">
+
+    {{-- Bouton retour accueil --}}
+    <a href="{{ url('/') }}" class="home-btn">
+        <img src="{{ asset('images/13.png') }}" alt="HostelFlow" onerror="this.style.display='none'">
+        <span>Accueil</span>
     </a>
 
     <div class="page-wrapper">
-        <div class="card">
 
-            {{-- Logo --}}
-            <div class="fade-up d1" style="text-align:center;">
-                <div class="logo-ring">
-                    <img src="{{ asset('images/13.png') }}"
-                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
-                         alt="Logo HostelFlow">
-                    <span class="logo-fallback" style="display:none;">HF</span>
-                </div>
+        {{-- ── Header (logo + titre + badge) ─────────────────────── --}}
+        <div class="header-block fade-up d1">
+            <div class="logo-circle">
+                <img src="{{ asset('images/13.png') }}"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                     alt="Logo HostelFlow">
+                <span class="logo-fallback" style="display:none;">HF</span>
             </div>
 
-            {{-- Heading --}}
-            <div class="header fade-up d2">
-                <h1>Bienvenue, <span class="accent">propriétaire</span></h1>
-                <p>Entrez vos identifiants pour accéder à votre espace de gestion</p>
-            </div>
+            <h1>Bienvenue,<br><em>propriétaire</em></h1>
 
-            {{-- Erreurs --}}
+            <div class="role-badge">
+                <span class="role-badge-icon">🏠</span>
+                <span>Propriétaire</span>
+            </div>
+        </div>
+
+        {{-- ── Card formulaire ─────────────────────────────────────── --}}
+        <div class="card fade-up d2">
+
             @if($errors->any())
-            <div class="error-banner fade-up d2">
-                @foreach($errors->all() as $e)
-                    <p>→ {{ $e }}</p>
-                @endforeach
+            <div class="error-banner">
+                @foreach($errors->all() as $e)<p>→ {{ $e }}</p>@endforeach
             </div>
             @endif
 
-            {{-- Formulaire --}}
             <form method="POST" action="{{ route('owner.login.store') }}">
                 @csrf
 
                 <div class="form-group fade-up d3">
                     <label class="form-label" for="email">Adresse email</label>
-                    <div class="input-wrap">
-                        <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/>
-                        </svg>
-                        <input id="email" class="input-field" type="email"
-                               name="email" value="{{ old('email') }}"
-                               placeholder="vous@hostelflow.com"
-                               required autocomplete="email">
-                    </div>
+                    <input id="email" class="input-field" type="email"
+                           name="email" value="{{ old('email') }}"
+                           placeholder="vous@hostelflow.com"
+                           required autocomplete="email">
                 </div>
 
                 <div class="form-group fade-up d4">
                     <label class="form-label" for="password">Mot de passe</label>
-                    <div class="input-wrap">
-                        <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                        </svg>
-                        <input id="password" class="input-field" type="password"
-                               name="password" placeholder="••••••••"
-                               required autocomplete="current-password">
-                    </div>
+                    <input id="password" class="input-field" type="password"
+                           name="password" placeholder="••••••••"
+                           required autocomplete="current-password">
                 </div>
 
                 <div class="row-opts fade-up d5">
@@ -244,13 +477,15 @@
 
             <div class="divider fade-up d6"><span>Espace équipe</span></div>
 
-            {{-- Lien équipe — pas de création de compte --}}
             <p class="footer-text fade-up d6">
                 Staff / Manager / Financier ?
                 <a href="{{ route('user.login') }}">Connexion équipe</a>
             </p>
 
         </div>
+
+        <p class="copyright fade-up d6">HostelFlow © {{ date('Y') }}</p>
+
     </div>
 
 </body>
