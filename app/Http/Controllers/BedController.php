@@ -13,24 +13,26 @@ class BedController extends Controller
     {
         $hostelId = session('hostel_id');
 
-        $beds = Bed::whereHas('room', fn ($q) => $q->where('hostel_id', $hostelId))
-            ->with('room')
-            ->latest()
-            ->get();
-
-        // Seulement les dortoirs pour le formulaire d'ajout
-        $rooms = Room::where('hostel_id', $hostelId)
+        // ✅ Chambres dortoirs avec leurs lits (eager loading)
+        $dormitories = Room::where('hostel_id', $hostelId)
             ->where('type', 'dormitory')
+            ->with(['beds' => fn ($q) => $q->latest()])
+            ->withCount('beds')
+            ->orderBy('name')
             ->get();
 
-        return view('beds.index', compact('beds', 'rooms'));
+        // ⚠️ Chambres en surcapacité (legacy data)
+        $overCapacity = $dormitories
+            ->filter(fn ($r) => $r->beds_count > $r->max_capacity)
+            ->values();
+
+        return view('beds.index', compact('dormitories', 'overCapacity'));
     }
 
     public function store(StoreBedRequest $request)
     {
         $data = $request->validated();
 
-        // room_id est déjà validé : appartient à l'hostel + type dormitory
         Bed::create([
             'room_id' => $data['room_id'],
             'name'    => $data['name'],

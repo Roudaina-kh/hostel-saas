@@ -35,9 +35,10 @@ use App\Http\Controllers\Manager\ManagerInventoryBlockController;
 use App\Http\Controllers\Reservation\CreateReservationController;
 use App\Http\Controllers\Reservation\ManagerReservationController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\Staff\StaffExpenseController;
 
 
-// ═══════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════
 // LANDING & CONTACT (routes publiques)
 // ═══════════════════════════════════════════════
@@ -56,9 +57,8 @@ Route::get('/explore/{id}',        [SearchController::class, 'show'])->name('sea
 // OWNER AUTH
 // ═══════════════════════════════════════════════
 Route::get('/login',  [OwnerAuthController::class, 'create'])->name('owner.login');
-Route::post('/login', [OwnerAuthController::class, 'store'])->name('owner.login.store');;
+Route::post('/login', [OwnerAuthController::class, 'store'])->name('owner.login.store');
 Route::post('/logout', [OwnerAuthController::class, 'destroy'])->name('owner.logout');
-
 
 // ═══════════════════════════════════════════════════════
 // SUPER ADMIN
@@ -107,6 +107,7 @@ Route::prefix('user')->name('user.')->group(function () {
 
     Route::middleware('auth:user')->group(function () {
         Route::post('/logout', [UserAuthController::class, 'destroy'])->name('logout');
+        // NOTE: pas de routes expenses ici — elles sont dans manager. et staff.
     });
 });
 
@@ -136,8 +137,15 @@ Route::middleware('auth:owner')->group(function () {
 
     Route::middleware('hostel.selected')->group(function () {
 
+        // ── Dépenses (owner) ─────────────────────────────────────────────
+        Route::post('/expenses/check-password', [ExpenseController::class, 'checkPassword'])
+            ->name('expenses.check-password');
+        Route::resource('expenses', ExpenseController::class)->except(['show']);
+
+        // ── Dashboard ────────────────────────────────────────────────────
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+        // ── Rooms / Beds / Tent Spaces ───────────────────────────────────
         Route::resource('rooms', RoomController::class)->except(['show']);
 
         Route::get('/beds', [BedController::class, 'index'])->name('beds.index');
@@ -149,24 +157,29 @@ Route::middleware('auth:owner')->group(function () {
         Route::resource('tent-spaces', TentSpaceController::class)->except(['show']);
         Route::post('/tent-spaces/{tentSpace}/toggle', [TentSpaceController::class, 'toggle'])->name('tent-spaces.toggle');
 
+        // ── Prices / Taxes ───────────────────────────────────────────────
         Route::resource('prices', PriceController::class)->except(['show']);
 
         Route::resource('taxes', TaxController::class)->except(['show']);
         Route::post('/taxes/{tax}/toggle', [TaxController::class, 'toggleEnabled'])->name('taxes.toggle');
 
+        // ── Extras / Stock ───────────────────────────────────────────────
         Route::resource('extras', ExtraController::class)->except(['show']);
         Route::get('/extras/{extra}/movements', [ExtraStockMovementController::class, 'index'])->name('extras.movements');
         Route::post('/extras/{extra}/movements', [ExtraStockMovementController::class, 'store'])->name('extras.movements.store');
         Route::delete('/extras/movements/{extraStockMovement}', [ExtraStockMovementController::class, 'destroy'])->name('extras.movements.destroy');
 
+        // ── Inventory Blocks ─────────────────────────────────────────────
         Route::resource('inventory-blocks', InventoryBlockController::class)->except(['show', 'create', 'edit']);
 
+        // ── Managers ─────────────────────────────────────────────────────
         Route::resource('managers', ManagerController::class)->except(['show']);
 
+        // ── Exchange Rates ───────────────────────────────────────────────
         Route::resource('exchange-rates', ExchangeRateController::class)
             ->only(['index', 'create', 'store', 'show']);
 
-        // Demandes clients
+        // ── Contact Requests ─────────────────────────────────────────────
         Route::get('/contact-requests', [\App\Http\Controllers\ContactRequestController::class, 'index'])->name('contact-requests.index');
         Route::patch('/contact-requests/{contactRequest}/mark-read', [\App\Http\Controllers\ContactRequestController::class, 'markRead'])->name('contact-requests.mark-read');
         Route::patch('/contact-requests/{contactRequest}/mark-replied', [\App\Http\Controllers\ContactRequestController::class, 'markReplied'])->name('contact-requests.mark-replied');
@@ -174,7 +187,7 @@ Route::middleware('auth:owner')->group(function () {
         Route::patch('/contact-requests/{contactRequest}/confirm', [\App\Http\Controllers\ContactRequestController::class, 'confirm'])->name('contact-requests.confirm');
         Route::patch('/contact-requests/{contactRequest}/cancel',  [\App\Http\Controllers\ContactRequestController::class, 'cancel'])->name('contact-requests.cancel');
 
-        // Réservations OWNER
+        // ── Reservations (owner) ─────────────────────────────────────────
         Route::get('/reservations',                 [CreateReservationController::class, 'index'])->name('reservations.index');
         Route::get('/reservations/create',          [CreateReservationController::class, 'create'])->name('reservations.create');
         Route::post('/reservations',                [CreateReservationController::class, 'store'])->name('reservations.store');
@@ -184,7 +197,7 @@ Route::middleware('auth:owner')->group(function () {
         Route::put('/reservations/{id}',            [CreateReservationController::class, 'update'])->name('reservations.update');
         Route::delete('/reservations/{id}',         [CreateReservationController::class, 'destroy'])->name('reservations.destroy');
 
-        // Payments OWNER
+        // ── Payments (owner) ─────────────────────────────────────────────
         Route::get('/payments/reservation/{reservation}/people', [PaymentController::class, 'people'])->name('payments.people');
         Route::resource('payments', PaymentController::class);
 
@@ -196,18 +209,30 @@ Route::middleware('auth:owner')->group(function () {
 // ═══════════════════════════════════════════════════════
 Route::prefix('manager')->name('manager.')->middleware(['auth:user', 'manager.auth'])->group(function () {
 
+    // ── Dépenses (manager) ───────────────────────────────────────────────
+    Route::post('/expenses/check-password', [StaffExpenseController::class, 'checkPassword'])
+        ->name('expenses.check-password');
+    Route::resource('expenses', StaffExpenseController::class)->except(['show']);
+
+    // ── Dashboard ────────────────────────────────────────────────────────
     Route::get('/dashboard', [ManagerDashboardController::class, 'index'])->name('dashboard');
+
+    // ── Inventory / Rooms ────────────────────────────────────────────────
     Route::resource('inventory-blocks', ManagerInventoryBlockController::class)->except(['show']);
     Route::resource('rooms', ManagerRoomController::class)->except(['show']);
+
+    // ── Exchange Rates ───────────────────────────────────────────────────
     Route::resource('exchange-rates', ManagerExchangeRateController::class)->only(['index', 'create', 'store', 'show']);
 
-    // Demandes clients
+    // ── Contact Requests ─────────────────────────────────────────────────
     Route::get('/contact-requests', [\App\Http\Controllers\ContactRequestController::class, 'index'])->name('contact-requests.index');
     Route::patch('/contact-requests/{contactRequest}/mark-read', [\App\Http\Controllers\ContactRequestController::class, 'markRead'])->name('contact-requests.mark-read');
     Route::patch('/contact-requests/{contactRequest}/mark-replied', [\App\Http\Controllers\ContactRequestController::class, 'markReplied'])->name('contact-requests.mark-replied');
     Route::delete('/contact-requests/{contactRequest}', [\App\Http\Controllers\ContactRequestController::class, 'destroy'])->name('contact-requests.destroy');
+    Route::patch('/contact-requests/{contactRequest}/confirm', [\App\Http\Controllers\ContactRequestController::class, 'confirm'])->name('contact-requests.confirm');
+    Route::patch('/contact-requests/{contactRequest}/cancel',  [\App\Http\Controllers\ContactRequestController::class, 'cancel'])->name('contact-requests.cancel');
 
-    // Réservations Manager
+    // ── Reservations (manager) ───────────────────────────────────────────
     Route::get('/reservations',                 [ManagerReservationController::class, 'index'])->name('reservations.index');
     Route::get('/reservations/create',          [ManagerReservationController::class, 'create'])->name('reservations.create');
     Route::post('/reservations',                [ManagerReservationController::class, 'store'])->name('reservations.store');
@@ -216,14 +241,12 @@ Route::prefix('manager')->name('manager.')->middleware(['auth:user', 'manager.au
     Route::get('/reservations/{id}/edit',       [ManagerReservationController::class, 'edit'])->name('reservations.edit');
     Route::put('/reservations/{id}',            [ManagerReservationController::class, 'update'])->name('reservations.update');
     Route::delete('/reservations/{id}',         [ManagerReservationController::class, 'destroy'])->name('reservations.destroy');
-    Route::patch('/contact-requests/{contactRequest}/confirm', [\App\Http\Controllers\ContactRequestController::class, 'confirm'])->name('contact-requests.confirm');
-    Route::patch('/contact-requests/{contactRequest}/cancel',  [\App\Http\Controllers\ContactRequestController::class, 'cancel'])->name('contact-requests.cancel');
 
-    // Payments Manager
+    // ── Payments (manager) ───────────────────────────────────────────────
     Route::get('/payments/reservation/{reservation}/people', [\App\Http\Controllers\Manager\ManagerPaymentController::class, 'people'])->name('payments.people');
     Route::resource('payments', \App\Http\Controllers\Manager\ManagerPaymentController::class);
 
-    // Pricing
+    // ── Pricing ──────────────────────────────────────────────────────────
     $pricingData = function () {
         $hostelId       = session('staff_hostel_id');
         $prices         = \App\Models\Price::where('hostel_id', $hostelId)->with(['priceable', 'taxes'])->whereNotNull('priceable_type')->latest()->get();
@@ -293,7 +316,7 @@ Route::prefix('manager')->name('manager.')->middleware(['auth:user', 'manager.au
         return redirect()->route('manager.pricing.index')->with('success', 'Tarif supprimé.');
     })->name('pricing.destroy');
 
-    // Beds
+    // ── Beds ─────────────────────────────────────────────────────────────
     Route::get('/beds', function () {
         $hostelId = session('staff_hostel_id');
         $beds  = \App\Models\Bed::whereHas('room', fn($q) => $q->where('hostel_id', $hostelId))->with('room')->get();
@@ -321,11 +344,11 @@ Route::prefix('manager')->name('manager.')->middleware(['auth:user', 'manager.au
         return redirect()->route('manager.beds.index')->with('success', 'Lit supprimé.');
     })->name('beds.destroy');
 
-    // Taxes
+    // ── Taxes ────────────────────────────────────────────────────────────
     Route::get('/taxes', [ManagerTaxController::class, 'index'])->name('taxes.index');
     Route::put('/taxes', [ManagerTaxController::class, 'update'])->name('taxes.update');
 
-    // Staff
+    // ── Staff management ─────────────────────────────────────────────────
     Route::get('/staff', function () {
         $hostelId = session('staff_hostel_id');
         $staff = \App\Models\User::whereHas('hostels', fn($q) => $q->where('hostels.id', $hostelId))
@@ -363,7 +386,7 @@ Route::prefix('manager')->name('manager.')->middleware(['auth:user', 'manager.au
         return redirect()->route('manager.staff.index')->with('success', 'Membre retiré.');
     })->name('staff.destroy');
 
-    // Settings
+    // ── Settings ─────────────────────────────────────────────────────────
     Route::get('/settings', function () {
         $user     = Auth::guard('user')->user();
         $hostelId = session('staff_hostel_id');
@@ -393,6 +416,12 @@ Route::prefix('manager')->name('manager.')->middleware(['auth:user', 'manager.au
 // ═══════════════════════════════════════════════════════
 Route::prefix('staff')->name('staff.')->middleware('auth:user')->group(function () {
 
+    // ── Dépenses (staff / financial) ─────────────────────────────────────
+    Route::post('/expenses/check-password', [StaffExpenseController::class, 'checkPassword'])
+        ->name('expenses.check-password');
+    Route::resource('expenses', StaffExpenseController::class)->except(['show']);
+
+    // ── Dashboards ───────────────────────────────────────────────────────
     Route::get('/dashboard', [StaffDashboardController::class, 'index'])->name('dashboard');
     Route::get('/financial/dashboard', [FinancialDashboardController::class, 'index'])->name('financial.dashboard');
     Route::get('/financial/reports', [FinancialReportController::class, 'index'])->name('financial.reports.index');
@@ -400,7 +429,7 @@ Route::prefix('staff')->name('staff.')->middleware('auth:user')->group(function 
     Route::get('/cash-shifts', [CashShiftController::class, 'index'])->name('cash-shifts.index');
     Route::post('/cash-shifts/open', [CashShiftController::class, 'open'])->name('cash-shifts.open');
 
-    // Réservations Staff
+    // ── Reservations (staff) ─────────────────────────────────────────────
     Route::get('/reservations',                 [ManagerReservationController::class, 'index'])->name('reservations.index');
     Route::get('/reservations/available-units', [ManagerReservationController::class, 'availableUnits'])->name('reservations.available-units');
     Route::post('/reservations/check-password', [ManagerReservationController::class, 'checkPassword'])->name('reservations.check-password');
@@ -410,7 +439,7 @@ Route::prefix('staff')->name('staff.')->middleware('auth:user')->group(function 
     Route::put('/reservations/{id}',            [ManagerReservationController::class, 'update'])->name('reservations.update');
     Route::delete('/reservations/{id}',         [ManagerReservationController::class, 'destroy'])->name('reservations.destroy');
 
-    // Payments Staff
+    // ── Payments (staff) ─────────────────────────────────────────────────
     Route::get('/payments/reservation/{reservation}/people', [\App\Http\Controllers\Staff\StaffPaymentController::class, 'people'])->name('payments.people');
     Route::get('/payments',           [\App\Http\Controllers\Staff\StaffPaymentController::class, 'index'])->name('payments.index');
     Route::get('/payments/create',    [\App\Http\Controllers\Staff\StaffPaymentController::class, 'create'])->name('payments.create');

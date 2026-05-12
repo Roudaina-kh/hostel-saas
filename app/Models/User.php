@@ -78,5 +78,9 @@ public function roleInHostel(int $hostelId): ?string
     {
         return $this->hasMany(ExtraStockMovement::class, 'created_by');
     }
+    public function expenses()
+{
+    return $this->hasMany(\App\Models\Expense::class);
+}
 
 }

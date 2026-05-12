@@ -40,11 +40,23 @@ class StoreBedRequest extends FormRequest
         return [
             function (Validator $validator) {
                 $room = Room::find($this->input('room_id'));
+                if (!$room) return;
 
-                if ($room && $room->type !== 'dormitory') {
+                // Type dortoir requis
+                if ($room->type !== 'dormitory') {
                     $validator->errors()->add(
                         'room_id',
                         'Les lits ne peuvent être créés que dans une chambre de type dortoir.'
+                    );
+                    return;
+                }
+
+                // 🔒 Vérification capacité (defense in depth — même si le select ne propose plus la chambre)
+                $bedsCount = $room->beds()->count();
+                if ($bedsCount >= $room->max_capacity) {
+                    $validator->errors()->add(
+                        'room_id',
+                        "La chambre « {$room->name} » a atteint sa capacité maximale ({$room->max_capacity} lits). Augmentez la capacité de la chambre avant d'ajouter d'autres lits."
                     );
                 }
             },

@@ -40,4 +40,8 @@ class Owner extends Authenticatable
     {
         return $this->hasMany(Hostel::class);
     }
+    public function expenses()
+{
+    return $this->hasMany(\App\Models\Expense::class);
+}
 }

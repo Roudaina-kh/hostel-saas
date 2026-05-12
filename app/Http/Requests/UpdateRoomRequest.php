@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateRoomRequest extends FormRequest
 {
@@ -30,6 +31,28 @@ class UpdateRoomRequest extends FormRequest
             'max_capacity' => ['required', 'integer', 'min:1'],
             'is_enabled'   => ['boolean'],
             'description'  => ['nullable', 'string', 'max:500'],
+        ];
+    }
+
+    public function after(): array
+    {
+        return [
+            function (Validator $validator) {
+                $room = $this->route('room');
+                if (!$room) return;
+
+                // 🔒 Protection symétrique : ne pas baisser la capacité en dessous du nombre de lits existants
+                $newCapacity = (int) $this->input('max_capacity');
+                $bedsCount   = $room->beds()->count();
+
+                if ($newCapacity < $bedsCount) {
+                    $surplus = $bedsCount - $newCapacity;
+                    $validator->errors()->add(
+                        'max_capacity',
+                        "Impossible de réduire la capacité à {$newCapacity} : cette chambre contient déjà {$bedsCount} lit(s). Supprimez d'abord {$surplus} lit(s) avant de baisser la capacité."
+                    );
+                }
+            },
         ];
     }
 

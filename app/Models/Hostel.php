@@ -92,4 +92,8 @@ protected $fillable = [
     {
         return $this->hasMany(ExchangeRate::class);
     }
+    public function expenses()
+{
+    return $this->hasMany(\App\Models\Expense::class);
+}
 }
