@@ -6,12 +6,43 @@
         'mixed'   => '🌿 Mixte',
         default   => '🏨 Hostel',
     };
+
+    /*
+     * ─────────────────────────────────────────────────────────────────────
+     *  Résolution intelligente du chemin de l'image de couverture.
+     * ─────────────────────────────────────────────────────────────────────
+     *  HostelFlow stocke les images dans 2 emplacements possibles :
+     *
+     *    1) public/images/...
+     *       → assets statiques semés par DemoHostelImagesSeeder
+     *       → cover_image en BD : "images/Tabarka.jpg"
+     *       → URL finale : asset("images/Tabarka.jpg")
+     *
+     *    2) storage/app/public/uploads/...
+     *       → uploads dynamiques depuis le formulaire owner
+     *       → cover_image en BD : "uploads/abc123.jpg"
+     *       → URL finale : asset("storage/uploads/abc123.jpg")
+     *         (via le symlink créé par `php artisan storage:link`)
+     *
+     *  Détection : si le chemin commence par "images/" → asset public,
+     *              sinon → storage symlink.
+     *
+     *  Pattern PFE : "Storage Resolution Strategy" — la vue est agnostique
+     *  de la source des assets, ce qui permet de mixer seeds et uploads
+     *  sans dupliquer la logique d'affichage.
+     */
+    $coverUrl = null;
+    if ($hostel->cover_image) {
+        $coverUrl = str_starts_with($hostel->cover_image, 'images/')
+            ? asset($hostel->cover_image)
+            : asset('storage/' . $hostel->cover_image);
+    }
 @endphp
 
 <div class="hostel-card">
     <div class="card-img">
-        @if($hostel->cover_image)
-            <img src="{{ asset('storage/' . $hostel->cover_image) }}" alt="{{ $hostel->name }}"
+        @if($coverUrl)
+            <img src="{{ $coverUrl }}" alt="{{ $hostel->name }}"
                  onerror="this.parentElement.innerHTML='<div class=\'card-placeholder\'>🏨</div>'">
         @else
             <div class="card-placeholder">

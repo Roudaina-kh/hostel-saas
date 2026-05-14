@@ -39,12 +39,14 @@ class FinancialDashboardController extends Controller
             $monthlyRevenue = Payment::whereHas('reservation', function ($q) use ($hostel) {
                 $q->where('hostel_id', $hostel->id);
             })
+            ->where('status', 'paid')
             ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
-            ->sum('amount');
+            ->sum('amount_tnd');
         }
 
         if (Schema::hasTable('expenses')) {
-            $monthlyExpenses = Expense::whereBetween('created_at', [$startOfMonth, $endOfMonth])
+            $monthlyExpenses = Expense::where('hostel_id', $hostel->id)
+                ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
                 ->sum('amount');
         }
 

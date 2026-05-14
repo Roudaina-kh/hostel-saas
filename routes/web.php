@@ -201,6 +201,10 @@ Route::middleware('auth:owner')->group(function () {
         Route::get('/payments/reservation/{reservation}/people', [PaymentController::class, 'people'])->name('payments.people');
         Route::resource('payments', PaymentController::class);
 
+        // ── Analytics (owner) ────────────────────────────────────────────
+        Route::get('/analytics',      [\App\Http\Controllers\AnalyticsController::class, 'index'])->name('analytics.index');
+        Route::get('/analytics/data', [\App\Http\Controllers\AnalyticsController::class, 'data'])->name('analytics.data');
+
     }); // fin hostel.selected
 }); // fin auth:owner
 

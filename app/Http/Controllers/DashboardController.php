@@ -6,6 +6,8 @@ use App\Models\Bed;
 use App\Models\Room;
 use App\Models\TentSpace;
 use App\Models\InventoryBlock;
+use App\Models\Reservation;
+use App\Models\Payment;
 use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
@@ -20,8 +22,17 @@ class DashboardController extends Controller
             $q->where('hostel_id', $hostelId);
         })->where('is_enabled', true)->count();  // ← seulement is_enabled = true
 
-        $activeReservations = 0;
-        $monthlyRevenue     = 0;
+        $activeReservations = Reservation::where('hostel_id', $hostelId)
+            ->whereNotIn('status', ['cancelled'])
+            ->count();
+
+        $monthlyRevenue = Payment::whereHas('reservation', function ($q) use ($hostelId) {
+                $q->where('hostel_id', $hostelId);
+            })
+            ->where('status', 'paid')
+            ->whereMonth('created_at', $today->month)
+            ->whereYear('created_at', $today->year)
+            ->sum('amount_tnd');
 
         // ── Blocages actifs aujourd'hui ───────────────────────
         // blockable_type stocké en nom court 'room' OU complet selon le controller
@@ -60,7 +71,7 @@ class DashboardController extends Controller
 
         // ── Tentes ────────────────────────────────────────────
         $activeTentSpacesCount   = TentSpace::where('hostel_id', $hostelId)->where('is_enabled', true)->count();
-$inactiveTentSpacesCount = TentSpace::where('hostel_id', $hostelId)->where('is_enabled', false)->count();
+        $inactiveTentSpacesCount = TentSpace::where('hostel_id', $hostelId)->where('is_enabled', false)->count();
 
         return view('dashboard', compact(
             'availableBeds',

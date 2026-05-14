@@ -325,11 +325,12 @@
                 ['route' => 'exchange-rates.index',      'icon' => '💱',  'label' => 'Taux de change',    'group' => 'finance'],
                 ['route' => 'payments.index',            'icon' => '💳',  'label' => 'Paiements',         'group' => 'finance'],
                 ['route' => 'expenses.index',            'icon' => '💸',  'label' => 'Dépenses',          'group' => 'finance'],
+                ['route' => 'analytics.index',           'icon' => '📈',  'label' => 'Analytics',         'group' => 'finance'],
                 ['route' => 'managers.index',            'icon' => '👥',  'label' => 'Équipe',            'group' => 'admin'],
                 ['route' => 'contact-requests.index',    'icon' => '📩',  'label' => 'Demandes clients',  'group' => 'admin'],
                 ['route' => 'hostels.index',             'icon' => '🏠',  'label' => 'Mes Hostels',       'group' => 'admin'],
             ];
-            $soon = ['Rapports', 'Analytics'];
+            $soon = ['Rapports'];
 
         /* ── MANAGER ── */
         } elseif ($isManager) {

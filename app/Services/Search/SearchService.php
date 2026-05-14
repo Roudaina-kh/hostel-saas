@@ -8,6 +8,26 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * SearchService — moteur de recherche HostelFlow.
+ *
+ * ──────────────────────────────────────────────────────────────────────────
+ *  FIX Sprint 4 : "Photos First Ordering"
+ *
+ *  Avant : tous les hostels ayant rating=0 (cas des hostels neufs ou
+ *  fraîchement semés), le tri par défaut "popularity" retombait sur
+ *  ORDER BY id ASC → les premiers résultats étaient toujours les IDs
+ *  1, 2, 3… qui se trouvent être ceux SANS cover_image (pour notre
+ *  démo PFE actuelle). Conséquence : la landing affichait 6 placeholders.
+ *
+ *  Fix : on insère un critère prioritaire `cover_image IS NULL ASC`
+ *  → les hostels avec photo passent en premier, les placeholders à la fin.
+ *  Aucun changement sur les autres tris (price_asc, price_desc, rating).
+ *
+ *  Pattern PFE : "Asset Completeness Sort" — privilégier les enregistrements
+ *  visuellement complets pour optimiser la première impression utilisateur.
+ *  ────────────────────────────────────────────────────────────────────────
+ */
 class SearchService
 {
     public function __construct(
@@ -44,7 +64,6 @@ class SearchService
             ->select('hostels.*')
             ->where('hostels.is_active', true);
 
-        // 📍 Filtre région — CTE récursif, profondeur illimitée
         if ($params->regionSlug) {
             $region = Cache::remember(
                 "region:slug:{$params->regionSlug}",
@@ -63,17 +82,14 @@ class SearchService
             }
         }
 
-        // 🏕 Filtre type (hostel / camping / mixed)
         if ($params->type) {
             $query->where('hostels.type', $params->type);
         }
 
-        // 🔍 Sous-types cumulables (chambres privées / dortoirs / tentes)
         if (!empty($params->subtypes)) {
             $this->applySubtypeFilter($query, $params);
         }
 
-        // 💰 Filtre prix
         if ($params->minPrice !== null || $params->maxPrice !== null) {
             $query->whereExists(function ($sub) use ($params) {
                 $sub->select(DB::raw(1))
@@ -89,7 +105,6 @@ class SearchService
             });
         }
 
-        // ⭐ Filtre note
         if ($params->minRating !== null) {
             $query->where('hostels.rating', '>=', $params->minRating);
         }
@@ -97,19 +112,10 @@ class SearchService
         return $query;
     }
 
-    /**
-     * Filtre cumulable (logique OR) :
-     *   - chambres privées      : hostel ayant au moins 1 chambre 'private' active
-     *   - chambres dortoir      : hostel ayant au moins 1 chambre 'dormitory' active (avec capacité min optionnelle)
-     *   - tentes                : hostel ayant au moins 1 tent_space actif (avec capacité min optionnelle)
-     *
-     * Cocher plusieurs cases élargit les résultats (OR).
-     */
     private function applySubtypeFilter(Builder $query, SearchParams $params): void
     {
         $query->where(function (Builder $q) use ($params) {
 
-            // 🛏 Chambres privées
             if (in_array('private', $params->subtypes, true)) {
                 $q->orWhereExists(fn($sub) =>
                     $sub->select(DB::raw(1))
@@ -120,7 +126,6 @@ class SearchService
                 );
             }
 
-            // 🛌 Chambres dortoir (+ capacité min optionnelle sur rooms.max_capacity)
             if (in_array('dormitory', $params->subtypes, true)) {
                 $q->orWhereExists(function ($sub) use ($params) {
                     $sub->select(DB::raw(1))
@@ -135,7 +140,6 @@ class SearchService
                 });
             }
 
-            // 🏕 Tentes (+ capacité min optionnelle sur tent_spaces.max_persons)
             if (in_array('tent', $params->subtypes, true)) {
                 $q->orWhereExists(function ($sub) use ($params) {
                     $sub->select(DB::raw(1))
@@ -151,41 +155,40 @@ class SearchService
         });
     }
 
- private function applyAvailabilityFilter(Builder $query, SearchParams $params): void
-{
-    $checkIn  = $params->checkIn;
-    $checkOut = $params->checkOut;
-    $guests   = $params->guests;
+    private function applyAvailabilityFilter(Builder $query, SearchParams $params): void
+    {
+        $checkIn  = $params->checkIn;
+        $checkOut = $params->checkOut;
+        $guests   = $params->guests;
 
-    // Capacité totale (chambres + tentes) - occupation >= nb de voyageurs
-    $query->whereRaw('
-        (
-            COALESCE((
-                SELECT SUM(rooms.max_capacity)
-                FROM rooms
-                WHERE rooms.hostel_id = hostels.id
-                  AND rooms.is_enabled = 1
-            ), 0)
-            +
-            COALESCE((
-                SELECT SUM(tent_spaces.max_persons)
-                FROM tent_spaces
-                WHERE tent_spaces.hostel_id = hostels.id
-                  AND tent_spaces.is_enabled = 1
-            ), 0)
-            -
-            COALESCE((
-                SELECT COUNT(*)
-                FROM reservation_people rp
-                JOIN reservations r ON r.id = rp.reservation_id
-                WHERE r.hostel_id = hostels.id
-                  AND r.status NOT IN (?)
-                  AND r.start_date < ?
-                  AND r.end_date > ?
-            ), 0)
-        ) >= ?
-    ', ['cancelled', $checkOut, $checkIn, $guests]);
-}
+        $query->whereRaw('
+            (
+                COALESCE((
+                    SELECT SUM(rooms.max_capacity)
+                    FROM rooms
+                    WHERE rooms.hostel_id = hostels.id
+                      AND rooms.is_enabled = 1
+                ), 0)
+                +
+                COALESCE((
+                    SELECT SUM(tent_spaces.max_persons)
+                    FROM tent_spaces
+                    WHERE tent_spaces.hostel_id = hostels.id
+                      AND tent_spaces.is_enabled = 1
+                ), 0)
+                -
+                COALESCE((
+                    SELECT COUNT(*)
+                    FROM reservation_people rp
+                    JOIN reservations r ON r.id = rp.reservation_id
+                    WHERE r.hostel_id = hostels.id
+                      AND r.status NOT IN (?)
+                      AND r.start_date < ?
+                      AND r.end_date > ?
+                ), 0)
+            ) >= ?
+        ', ['cancelled', $checkOut, $checkIn, $guests]);
+    }
 
     private function applySort(Builder $query, SearchParams $params): void
     {
@@ -212,7 +215,9 @@ class SearchService
 
             case 'popularity':
             default:
-                $query->orderByDesc('hostels.total_reviews')
+                // ✨ FIX Sprint 4 : photos en premier (NULL en dernier)
+                $query->orderByRaw('hostels.cover_image IS NULL ASC')
+                      ->orderByDesc('hostels.total_reviews')
                       ->orderByDesc('hostels.rating')
                       ->orderBy('hostels.id');
                 break;
@@ -228,6 +233,8 @@ class SearchService
                     'prices' => fn($q) => $q->select('hostel_id', DB::raw('MIN(price_ttc) as min_price'))
                                             ->groupBy('hostel_id'),
                 ])
+                // ✨ FIX Sprint 4 : photos en premier (NULL en dernier)
+                ->orderByRaw('cover_image IS NULL ASC')
                 ->orderByDesc('rating')
                 ->orderByDesc('total_reviews')
                 ->limit($limit)

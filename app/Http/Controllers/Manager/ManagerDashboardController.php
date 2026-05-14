@@ -26,18 +26,17 @@ class ManagerDashboardController extends Controller
         }
 
         $stats = [
-            // is_enabled remplace status = 'active'
             'total_rooms'    => Room::where('hostel_id', $hostelId)->count(),
             'active_rooms'   => Room::where('hostel_id', $hostelId)->where('is_enabled', true)->count(),
-
-            // Beds n'a plus hostel_id ni maintenance — on passe via room
             'total_beds'     => Bed::whereHas('room', fn($q) => $q->where('hostel_id', $hostelId))->count(),
             'disabled_beds'  => Bed::whereHas('room', fn($q) => $q->where('hostel_id', $hostelId))->where('is_enabled', false)->count(),
-
             'total_tents'    => TentSpace::where('hostel_id', $hostelId)->count(),
             'rooms'          => Room::where('hostel_id', $hostelId)->latest()->take(5)->get(),
         ];
 
-        return view('manager.dashboard', compact('stats', 'manager', 'hostel'));
+        $currentManager = $manager;
+        $managerHostel  = $hostel;
+
+        return view('manager.dashboard', compact('stats', 'currentManager', 'managerHostel'));
     }
 }
