@@ -40,15 +40,16 @@ use App\Http\Controllers\Staff\StaffExpenseController;
 
 
 // ═══════════════════════════════════════════════
-// LANDING & CONTACT (routes publiques)
+// LANDING & SEARCH (routes publiques)
 // ═══════════════════════════════════════════════
-Route::get('/', [\App\Http\Controllers\SearchController::class, 'index'])->name('landing');
+Route::get('/',       [SearchController::class, 'landing'])->name('landing');
+Route::get('/search', [SearchController::class, 'index'])->name('search.index');
 
 Route::post('/contact', [\App\Http\Controllers\ContactRequestController::class, 'store'])
     ->name('contact.store');
 Route::get('/reserve/{hostel}', [\App\Http\Controllers\ContactRequestController::class, 'create'])
     ->name('contact.create');
-Route::get('/search',              [SearchController::class, 'index'])->name('search.index');
+
 Route::get('/search/regions',      [SearchController::class, 'regions'])->name('search.regions');
 Route::get('/search/availability', [SearchController::class, 'availability'])->name('search.availability');
 Route::get('/explore/{id}',        [SearchController::class, 'show'])->name('search.show');
@@ -70,7 +71,7 @@ Route::prefix('super-admin')->name('super-admin.')->group(function () {
         Route::post('/login', [SuperAdminAuthController::class, 'store'])->name('login.store');
     });
 
-    Route::middleware('auth:super_admin')->group(function () {
+    Route::middleware(['auth:super_admin', 'prevent.cache', 'session.timeout'])->group(function () {
         Route::post('/logout', [SuperAdminAuthController::class, 'destroy'])->name('logout');
 
         Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
@@ -107,7 +108,6 @@ Route::prefix('user')->name('user.')->group(function () {
 
     Route::middleware('auth:user')->group(function () {
         Route::post('/logout', [UserAuthController::class, 'destroy'])->name('logout');
-        // NOTE: pas de routes expenses ici — elles sont dans manager. et staff.
     });
 });
 
@@ -128,7 +128,7 @@ Route::post('/register-hostel', [App\Http\Controllers\HostelRequestController::c
 // ═══════════════════════════════════════════════════════
 // OWNER ROUTES
 // ═══════════════════════════════════════════════════════
-Route::middleware('auth:owner')->group(function () {
+Route::middleware(['auth:owner', 'prevent.cache', 'session.timeout'])->group(function () {
 
     Route::get('/onboarding', [HostelController::class, 'onboarding'])->name('onboarding.create');
     Route::post('/onboarding', [HostelController::class, 'storeFirst'])->name('onboarding.store');
@@ -211,7 +211,7 @@ Route::middleware('auth:owner')->group(function () {
 // ═══════════════════════════════════════════════════════
 // MANAGER ROUTES
 // ═══════════════════════════════════════════════════════
-Route::prefix('manager')->name('manager.')->middleware(['auth:user', 'manager.auth'])->group(function () {
+Route::prefix('manager')->name('manager.')->middleware(['auth:user', 'manager.auth', 'prevent.cache', 'session.timeout'])->group(function () {
 
     // ── Dépenses (manager) ───────────────────────────────────────────────
     Route::post('/expenses/check-password', [StaffExpenseController::class, 'checkPassword'])
@@ -418,7 +418,7 @@ Route::prefix('manager')->name('manager.')->middleware(['auth:user', 'manager.au
 // ═══════════════════════════════════════════════════════
 // STAFF ROUTES
 // ═══════════════════════════════════════════════════════
-Route::prefix('staff')->name('staff.')->middleware('auth:user')->group(function () {
+Route::prefix('staff')->name('staff.')->middleware(['auth:user', 'prevent.cache', 'session.timeout'])->group(function () {
 
     // ── Dépenses (staff / financial) ─────────────────────────────────────
     Route::post('/expenses/check-password', [StaffExpenseController::class, 'checkPassword'])

@@ -399,6 +399,7 @@
     /* ── Selection background ── */
     .selection\:bg-\[\#3B82F6\] *::selection { background: var(--terra) !important; }
     </style>
+    @stack('styles')
 </head>
 <body>
 
@@ -449,6 +450,83 @@
 </div>
 
 @stack('scripts')
+
+{{-- ── Session inactivity guard ── --}}
+@php
+    $path = request()->path();
+    if (str_starts_with($path, 'manager') || str_starts_with($path, 'staff')) {
+        $sessionLogoutUrl = route('user.logout');
+        $sessionLoginUrl  = route('user.login');
+    } else {
+        $sessionLogoutUrl = route('owner.logout');
+        $sessionLoginUrl  = route('owner.login');
+    }
+@endphp
+<script>
+(function () {
+    var WARN_MS   = 25 * 60 * 1000;  // 25 min → afficher l'avertissement
+    var LOGOUT_MS = 30 * 60 * 1000;  // 30 min → déconnexion automatique
+    var CSRF      = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
+    var LOGOUT_URL = '{{ $sessionLogoutUrl }}';
+
+    var _warnTimer, _logoutTimer;
+
+    function resetTimers() {
+        clearTimeout(_warnTimer);
+        clearTimeout(_logoutTimer);
+        hideBanner();
+        _warnTimer   = setTimeout(showBanner,   WARN_MS);
+        _logoutTimer = setTimeout(doLogout,      LOGOUT_MS);
+    }
+
+    function showBanner() {
+        var b = document.getElementById('_inactivity_banner');
+        if (!b) {
+            b = document.createElement('div');
+            b.id = '_inactivity_banner';
+            b.style.cssText = [
+                'position:fixed;top:0;left:0;right:0;z-index:99999',
+                'background:linear-gradient(90deg,#C8602A,#A84E20)',
+                'color:#fff;display:flex;align-items:center;justify-content:center;gap:18px',
+                'padding:13px 28px;font-size:0.88rem;font-weight:600',
+                'box-shadow:0 4px 24px rgba(200,96,42,0.45)',
+                'font-family:"DM Sans",sans-serif'
+            ].join(';');
+            b.innerHTML =
+                '<span>⏰ Votre session expire dans <strong>5 minutes</strong> par inactivité.</span>' +
+                '<button id="_inactivity_stay" style="background:rgba(255,255,255,0.18);border:1.5px solid rgba(255,255,255,0.35);' +
+                'border-radius:20px;color:#fff;padding:5px 18px;font-size:0.82rem;font-weight:700;cursor:pointer;' +
+                'font-family:inherit">Je suis là</button>';
+            document.body.appendChild(b);
+            document.getElementById('_inactivity_stay').addEventListener('click', resetTimers);
+        }
+        b.style.display = 'flex';
+    }
+
+    function hideBanner() {
+        var b = document.getElementById('_inactivity_banner');
+        if (b) b.style.display = 'none';
+    }
+
+    function doLogout() {
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = LOGOUT_URL;
+        var t = document.createElement('input');
+        t.type = 'hidden'; t.name = '_token'; t.value = CSRF;
+        form.appendChild(t);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // Réinitialiser les timers sur toute activité utilisateur
+    ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'].forEach(function (evt) {
+        document.addEventListener(evt, resetTimers, { passive: true });
+    });
+
+    resetTimers();
+})();
+</script>
 
 </body>
 </html>

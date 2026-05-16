@@ -18,7 +18,7 @@ body{font-family:'Inter',sans-serif;background:#F1F5F9;color:#1E293B;display:fle
 }
 .sa-logo{padding:24px 20px 20px;display:flex;align-items:center;gap:10px;
   border-bottom:1px solid rgba(255,255,255,0.08)}
-.sa-logo img{height:36px;width:auto;object-fit:contain;filter:brightness(0) invert(1)}
+.sa-logo img{height:36px;width:auto;object-fit:contain;border-radius:6px}
 .sa-logo-text{font-size:1.1rem;font-weight:800;color:#fff;letter-spacing:-0.3px}
 .sa-logo-text span{color:#A78BFA}
 .sa-role-badge{margin:12px 16px;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);
@@ -124,7 +124,7 @@ body{font-family:'Inter',sans-serif;background:#F1F5F9;color:#1E293B;display:fle
 
 <aside class="sa-sidebar">
   <div class="sa-logo">
-    <img src="{{ asset('images/13.png') }}" alt="HostelFlow" onerror="this.style.display='none'">
+    <img src="{{ asset('images/logo2.png') }}" alt="HostelFlow" onerror="this.src='{{ asset('images/13.png') }}'">
     <span class="sa-logo-text">Hostel<span>Flow</span></span>
   </div>
   <div class="sa-role-badge">🛡 Super Administrateur</div>
@@ -193,6 +193,72 @@ body{font-family:'Inter',sans-serif;background:#F1F5F9;color:#1E293B;display:fle
     @yield('content')
   </div>
 </div>
+
+
+<script>
+(function () {
+    var WARN_MS   = 25 * 60 * 1000;
+    var LOGOUT_MS = 30 * 60 * 1000;
+    var CSRF      = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
+    var LOGOUT_URL = '{{ route("super-admin.logout") }}';
+
+    var _warnTimer, _logoutTimer;
+
+    function resetTimers() {
+        clearTimeout(_warnTimer);
+        clearTimeout(_logoutTimer);
+        hideBanner();
+        _warnTimer   = setTimeout(showBanner, WARN_MS);
+        _logoutTimer = setTimeout(doLogout,   LOGOUT_MS);
+    }
+
+    function showBanner() {
+        var b = document.getElementById('_inactivity_banner');
+        if (!b) {
+            b = document.createElement('div');
+            b.id = '_inactivity_banner';
+            b.style.cssText = [
+                'position:fixed;top:0;left:0;right:0;z-index:99999',
+                'background:linear-gradient(90deg,#7C3AED,#4F46E5)',
+                'color:#fff;display:flex;align-items:center;justify-content:center;gap:18px',
+                'padding:13px 28px;font-size:0.88rem;font-weight:600',
+                'box-shadow:0 4px 24px rgba(124,58,237,0.4)',
+                'font-family:"Inter",sans-serif'
+            ].join(';');
+            b.innerHTML =
+                '<span>⏰ Votre session expire dans <strong>5 minutes</strong> par inactivité.</span>' +
+                '<button id="_inactivity_stay" style="background:rgba(255,255,255,0.18);border:1.5px solid rgba(255,255,255,0.35);' +
+                'border-radius:20px;color:#fff;padding:5px 18px;font-size:0.82rem;font-weight:700;cursor:pointer;' +
+                'font-family:inherit">Je suis là</button>';
+            document.body.appendChild(b);
+            document.getElementById('_inactivity_stay').addEventListener('click', resetTimers);
+        }
+        b.style.display = 'flex';
+    }
+
+    function hideBanner() {
+        var b = document.getElementById('_inactivity_banner');
+        if (b) b.style.display = 'none';
+    }
+
+    function doLogout() {
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = LOGOUT_URL;
+        var t = document.createElement('input');
+        t.type = 'hidden'; t.name = '_token'; t.value = CSRF;
+        form.appendChild(t);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'].forEach(function (evt) {
+        document.addEventListener(evt, resetTimers, { passive: true });
+    });
+
+    resetTimers();
+})();
+</script>
 
 </body>
 </html>

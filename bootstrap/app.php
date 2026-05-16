@@ -20,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'staff.auth'         => \App\Http\Middleware\StaffAuthenticated::class,
             'super_admin.auth'   => \App\Http\Middleware\SuperAdminAuthenticated::class,
             'reservation.access' => \App\Http\Middleware\ReservationAccess::class,
+            'prevent.cache'      => \App\Http\Middleware\PreventCacheOnAuth::class,
+            'session.timeout'    => \App\Http\Middleware\CheckSessionTimeout::class,
         ]);
 
         // ── Redirection par guard quand non authentifié ──────

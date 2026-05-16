@@ -27,10 +27,8 @@
     .back-link { font-size: 0.85rem; color: var(--terra); text-decoration: none; display: flex; align-items: center; gap: 6px; font-weight: 600; }
     .back-link:hover { text-decoration: underline; }
 
-    /* Hero hostel */
     .hostel-hero {
-        margin-top: 68px;
-        height: 420px;
+        margin-top: 68px; height: 420px;
         background: linear-gradient(135deg, var(--teal) 0%, var(--night) 100%);
         position: relative; overflow: hidden;
     }
@@ -60,10 +58,8 @@
     .rating-stars { color: #E8A020; font-size: 0.75rem; }
     .rating-count { font-size: 0.7rem; color: var(--gray); margin-top: 2px; }
 
-    /* Layout */
     .page-content { max-width: 1100px; margin: 0 auto; padding: 2.5rem 3rem; display: grid; grid-template-columns: 1fr 340px; gap: 2.5rem; align-items: start; }
 
-    /* Left column */
     .content-section { background: var(--white); border: 1px solid var(--border); border-radius: 20px; padding: 24px 28px; margin-bottom: 1.5rem; }
     .cs-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 600; color: var(--ink); margin-bottom: 1rem; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
     .description { font-size: 0.92rem; color: var(--gray); line-height: 1.8; }
@@ -78,7 +74,6 @@
     .room-beds { font-size: 0.72rem; color: var(--lgray); margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; }
     .bed-chip { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 2px 8px; }
 
-    /* Sidebar */
     .sidebar-card {
         background: var(--white); border: 1.5px solid var(--border);
         border-radius: 20px; padding: 24px; position: sticky; top: 88px;
@@ -89,17 +84,16 @@
     .price-amount { font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 700; color: var(--ink); }
     .price-unit { font-size: 0.8rem; color: var(--lgray); }
     .avail-status { border-radius: 12px; padding: 12px 16px; font-size: 0.85rem; font-weight: 600; text-align: center; margin-bottom: 1.5rem; }
-    .avail-ok { background: rgba(27,107,107,0.1); color: var(--teal); }
-    .avail-low { background: rgba(200,96,42,0.1); color: var(--terra); }
-    .avail-full { background: rgba(200,50,50,0.1); color: #c83232; }
+    .avail-ok   { background: rgba(27,107,107,0.1); color: var(--teal); }
+    .avail-low  { background: rgba(200,96,42,0.1);  color: var(--terra); }
+    .avail-full { background: rgba(200,50,50,0.1);  color: #c83232; }
     .booking-form { display: flex; flex-direction: column; gap: 12px; }
     .form-group { display: flex; flex-direction: column; gap: 4px; }
     .form-label { font-size: 0.72rem; font-weight: 700; color: var(--lgray); text-transform: uppercase; letter-spacing: 0.06em; }
     .form-input {
         border: 1.5px solid var(--border); border-radius: 12px;
         padding: 10px 14px; font-size: 0.88rem; font-family: 'DM Sans', sans-serif;
-        color: var(--ink); background: var(--sand); outline: none;
-        transition: border-color 0.2s;
+        color: var(--ink); background: var(--sand); outline: none; transition: border-color 0.2s;
     }
     .form-input:focus { border-color: var(--terra); background: var(--white); }
     .btn-reserve {
@@ -125,10 +119,25 @@
     <a href="{{ route('search.index') }}" class="back-link">← Retour aux résultats</a>
 </nav>
 
-{{-- Hero --}}
+{{-- ── Hero ── --}}
+@php
+    /*
+     * Storage Resolution Strategy — même logique que _hostel_card.blade.php :
+     *   "images/..."  → asset public (seeds DemoHostelImagesSeeder)
+     *   autre         → storage symlink (uploads dynamiques owner)
+     */
+    $heroCoverUrl = null;
+    if ($hostel->cover_image) {
+        $heroCoverUrl = str_starts_with($hostel->cover_image, 'images/')
+            ? asset($hostel->cover_image)
+            : asset('storage/' . $hostel->cover_image);
+    }
+@endphp
+
 <div class="hostel-hero">
-    @if($hostel->cover_image)
-        <img src="{{ asset('storage/' . $hostel->cover_image) }}" alt="{{ $hostel->name }}">
+    @if($heroCoverUrl)
+        <img src="{{ $heroCoverUrl }}" alt="{{ $hostel->name }}"
+             onerror="this.style.display='none'">
     @endif
     <div class="hostel-hero-overlay"></div>
     <div class="hostel-hero-info">
@@ -152,9 +161,8 @@
 
 <div class="page-content">
 
-    {{-- Left --}}
+    {{-- ── Colonne gauche ── --}}
     <div>
-        {{-- Description --}}
         <div class="content-section">
             <div class="cs-title">À propos</div>
             @if($hostel->description)
@@ -167,7 +175,6 @@
             @endif
         </div>
 
-        {{-- Infos --}}
         <div class="content-section">
             <div class="cs-title">Informations</div>
             <div class="hostel-info-grid">
@@ -184,12 +191,14 @@
                 <div class="info-item"><div class="info-label">Email</div><div class="info-value">{{ $hostel->email }}</div></div>
                 @endif
                 @if($hostel->address)
-                <div class="info-item" style="grid-column:span 2"><div class="info-label">Adresse</div><div class="info-value">{{ $hostel->address }}</div></div>
+                <div class="info-item" style="grid-column:span 2">
+                    <div class="info-label">Adresse</div>
+                    <div class="info-value">{{ $hostel->address }}</div>
+                </div>
                 @endif
             </div>
         </div>
 
-        {{-- Chambres --}}
         @if($hostel->rooms->count() > 0)
         <div class="content-section">
             <div class="cs-title">Chambres disponibles ({{ $hostel->rooms->count() }})</div>
@@ -218,12 +227,11 @@
         @endif
     </div>
 
-    {{-- Sidebar --}}
+    {{-- ── Sidebar ── --}}
     <div>
         <div class="sidebar-card">
             @php $minPrice = $hostel->prices->min('price_ttc'); @endphp
 
-            {{-- Prix --}}
             <div class="price-display">
                 <div class="price-from">À partir de</div>
                 @if($minPrice)
@@ -234,17 +242,15 @@
                 @endif
             </div>
 
-            {{-- Disponibilité --}}
             @if($availability)
             <div class="avail-status avail-{{ $availability['status'] }}">
-                @if($availability['status'] === 'full') 🔴 Complet pour ces dates
-                @elseif($availability['status'] === 'low') 🟡 Plus que {{ $availability['available'] }} place(s) !
-                @else ✅ {{ $availability['available'] }} place(s) disponible(s)
+                @if($availability['status'] === 'full')      🔴 Complet pour ces dates
+                @elseif($availability['status'] === 'low')   🟡 Plus que {{ $availability['available'] }} place(s) !
+                @else                                         ✅ {{ $availability['available'] }} place(s) disponible(s)
                 @endif
             </div>
             @endif
 
-            {{-- Formulaire réservation --}}
             <form class="booking-form" method="GET" action="{{ route('search.show', $hostel->id) }}">
                 <div class="form-group">
                     <label class="form-label">Arrivée</label>
@@ -265,20 +271,16 @@
                 </div>
             </form>
 
-           <a href="{{ route('contact.create', ['hostel' => $hostel->id, 'check_in' => request('check_in'), 'check_out' => request('check_out'), 'guests' => request('guests', 1)]) }}"
-   class="btn-reserve" style="display:block;text-align:center;text-decoration:none;margin-top:1rem">
-    📋 Demander une réservation
-</a>
-            <form id="contactForm" action="{{ route('contact.store') }}" method="POST" style="display:none">
-                @csrf
-                <input type="hidden" name="destination" value="{{ $hostel->name }}">
-                <input type="hidden" name="first_name" value="Client">
-                <input type="hidden" name="last_name" value="Web">
-                <input type="hidden" name="email" value="client@web.com">
-                <input type="hidden" name="arrival_date" value="{{ request('check_in') }}">
-                <input type="hidden" name="departure_date" value="{{ request('check_out') }}">
-                <input type="hidden" name="travelers" value="{{ request('guests', 1) }}">
-            </form>
+            <a href="{{ route('contact.create', [
+                    'hostel'     => $hostel->id,
+                    'check_in'   => request('check_in'),
+                    'check_out'  => request('check_out'),
+                    'guests'     => request('guests', 1)
+                ]) }}"
+               class="btn-reserve"
+               style="display:block;text-align:center;text-decoration:none;margin-top:1rem">
+                📋 Demander une réservation
+            </a>
 
             <p style="font-size:0.72rem;color:var(--lgray);text-align:center;margin-top:10px">
                 Confirmation sous 24h · Sans engagement

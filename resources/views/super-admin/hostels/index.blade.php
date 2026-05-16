@@ -83,6 +83,72 @@
     </table>
 </div>
 
-<div style="margin-top:16px">{{ $hostels->links() }}</div>
+{{-- Pagination custom (cohérente avec le design super-admin) --}}
+@if($hostels->hasPages())
+<div style="margin-top:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <div style="font-size:12px;color:#94A3B8;font-weight:500">
+        Affichage <strong style="color:#1E293B">{{ $hostels->firstItem() }}–{{ $hostels->lastItem() }}</strong>
+        sur <strong style="color:#1E293B">{{ $hostels->total() }}</strong> résultats
+    </div>
+
+    <div style="display:flex;align-items:center;gap:6px">
+        {{-- Précédent --}}
+        @if($hostels->onFirstPage())
+            <span style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:8px;
+                         font-size:12px;font-weight:600;background:#F8FAFC;color:#CBD5E1;
+                         border:1px solid #E2E8F0;cursor:not-allowed;user-select:none">
+                ← Précédent
+            </span>
+        @else
+            <a href="{{ $hostels->previousPageUrl() }}"
+               style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:8px;
+                      font-size:12px;font-weight:600;background:#fff;color:#475569;
+                      border:1px solid #E2E8F0;text-decoration:none;transition:all .15s"
+               onmouseover="this.style.background='#F1F5F9';this.style.borderColor='#CBD5E1'"
+               onmouseout="this.style.background='#fff';this.style.borderColor='#E2E8F0'">
+                ← Précédent
+            </a>
+        @endif
+
+        {{-- Pages numérotées --}}
+        @foreach($hostels->getUrlRange(
+            max(1, $hostels->currentPage() - 2),
+            min($hostels->lastPage(), $hostels->currentPage() + 2)
+        ) as $page => $url)
+            @if($page == $hostels->currentPage())
+                <span style="display:inline-flex;align-items:center;justify-content:center;
+                             width:34px;height:34px;border-radius:8px;font-size:12px;font-weight:700;
+                             background:linear-gradient(135deg,#7C3AED,#4F46E5);color:#fff;
+                             border:1px solid transparent">{{ $page }}</span>
+            @else
+                <a href="{{ $url }}"
+                   style="display:inline-flex;align-items:center;justify-content:center;
+                          width:34px;height:34px;border-radius:8px;font-size:12px;font-weight:600;
+                          background:#fff;color:#475569;border:1px solid #E2E8F0;text-decoration:none;transition:all .15s"
+                   onmouseover="this.style.background='#F1F5F9'"
+                   onmouseout="this.style.background='#fff'">{{ $page }}</a>
+            @endif
+        @endforeach
+
+        {{-- Suivant --}}
+        @if($hostels->hasMorePages())
+            <a href="{{ $hostels->nextPageUrl() }}"
+               style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:8px;
+                      font-size:12px;font-weight:600;background:#fff;color:#475569;
+                      border:1px solid #E2E8F0;text-decoration:none;transition:all .15s"
+               onmouseover="this.style.background='#F1F5F9';this.style.borderColor='#CBD5E1'"
+               onmouseout="this.style.background='#fff';this.style.borderColor='#E2E8F0'">
+                Suivant →
+            </a>
+        @else
+            <span style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:8px;
+                         font-size:12px;font-weight:600;background:#F8FAFC;color:#CBD5E1;
+                         border:1px solid #E2E8F0;cursor:not-allowed;user-select:none">
+                Suivant →
+            </span>
+        @endif
+    </div>
+</div>
+@endif
 
 @endsection
