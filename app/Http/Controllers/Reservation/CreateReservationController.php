@@ -97,7 +97,7 @@ class CreateReservationController extends Controller
             'destroy'        => 'reservations.destroy',
             'avail'          => 'reservations.available-units',
             'pwd'            => 'reservations.check-password',
-            'payment_create' => 'payments.create',     // ← NEW
+            'payment_create' => 'payments.create',
             'store_url'      => route('reservations.store'),
             'index_url'      => route('reservations.index'),
             'avail_url'      => route('reservations.available-units'),
@@ -108,12 +108,11 @@ class CreateReservationController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 🆕 PLANNING DATA BUILDER
+    // PLANNING DATA BUILDER
     // ─────────────────────────────────────────────────────────────────────────
 
     private function buildPlanningData(Hostel $hostel, Request $request): array
     {
-        // Période
         $startParam = $request->get('planning_start');
         $start = $startParam ? \Carbon\Carbon::parse($startParam) : \Carbon\Carbon::today();
 
@@ -122,7 +121,6 @@ class CreateReservationController extends Controller
 
         $end = $start->copy()->addDays($days - 1);
 
-        // Liste des jours
         $dates = [];
         $cur = $start->copy();
         while ($cur->lte($end)) {
@@ -130,7 +128,6 @@ class CreateReservationController extends Controller
             $cur->addDay();
         }
 
-        // Unités
         $privateRooms = Room::where('hostel_id', $hostel->id)
             ->where('type', 'private')
             ->where('is_enabled', true)
@@ -149,7 +146,6 @@ class CreateReservationController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Réservations chevauchantes (non annulées)
         $reservations = Reservation::where('hostel_id', $hostel->id)
             ->whereNotIn('status', ['cancelled'])
             ->where('start_date', '<=', $end->toDateString())
@@ -157,7 +153,6 @@ class CreateReservationController extends Controller
             ->with(['people', 'mainGuest'])
             ->get();
 
-        // Index d'occupation : occupancy[item_type][item_id][date] = ['guest' => ..., 'status' => ...]
         $occupancy = [];
         foreach ($reservations as $res) {
             $resStart = \Carbon\Carbon::parse($res->start_date);
@@ -215,7 +210,6 @@ class CreateReservationController extends Controller
             'revenue'   => Reservation::where('hostel_id', $hostel->id)->whereNotIn('status', ['cancelled'])->sum('total_price_tnd'),
         ];
 
-        // 🆕 Planning data
         $planning = $this->buildPlanningData($hostel, $request);
 
         $canCreate = true;
@@ -238,7 +232,7 @@ class CreateReservationController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // STORE (inchangé)
+    // STORE  — nationality ajoutée pour le dashboard Analytics
     // ─────────────────────────────────────────────────────────────────────────
 
     public function store(StoreReservationRequest $request)
@@ -259,6 +253,9 @@ class CreateReservationController extends Controller
         if ($request->filled('extras_data')) {
             $extrasData = json_decode($request->extras_data, true) ?? [];
         }
+
+        // 🆕 Analytics : récupère la nationalité du groupe (1 champ form → appliqué à tous les guests)
+        $nationality = $request->input('nationality');
 
         DB::beginTransaction();
         try {
@@ -306,6 +303,7 @@ class CreateReservationController extends Controller
                     'reservation_id' => $reservation->id,
                     'guest_id'       => $guest->id,
                     'display_name'   => trim($guest->first_name . ' ' . $guest->last_name),
+                    'nationality'    => $nationality,                       // 🆕 Analytics
                     'item_type'      => $itemType,
                     'item_id'        => $itemId,
                     'price_tnd'      => $priceTnd,
@@ -372,7 +370,7 @@ class CreateReservationController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // EDIT, UPDATE, AJAX, DESTROY, helpers — inchangés (copie ton fichier actuel)
+    // EDIT  — nationality ajoutée au mapping
     // ─────────────────────────────────────────────────────────────────────────
 
     public function edit(int $id)
@@ -390,6 +388,7 @@ class CreateReservationController extends Controller
                 'phone'         => $guest?->phone         ?? '',
                 'country_id'    => $guest?->country_id    ?? '',
                 'gender'        => $guest?->gender        ?? 'male',
+                'nationality'   => $person->nationality   ?? '',          // 🆕 Analytics
                 'item_type'     => $person->item_type,
                 'item_id'       => $person->item_id,
                 'price_input'   => $person->price_input,
@@ -403,13 +402,23 @@ class CreateReservationController extends Controller
             return [$re->extra_id => $re->quantity];
         })->toArray();
 
+        // 🆕 Nationalité au niveau réservation (pour pré-remplir le champ unique du form)
+        $existingNationality = $reservation->people()
+            ->whereNotNull('nationality')
+            ->value('nationality');
+
         $data = $this->formData($hostel);
-        $data['reservation']    = $reservation;
-        $data['existingGuests'] = $existingGuests;
-        $data['existingExtras'] = $existingExtras;
+        $data['reservation']        = $reservation;
+        $data['existingGuests']     = $existingGuests;
+        $data['existingExtras']     = $existingExtras;
+        $data['existingNationality']= $existingNationality;               // 🆕 Analytics
 
         return view('reservations.edit', $data);
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // UPDATE  — nationality ajoutée (avec fallback : préserve l'existant si absent du form edit)
+    // ─────────────────────────────────────────────────────────────────────────
 
     public function update(Request $request, int $id)
     {
@@ -427,6 +436,7 @@ class CreateReservationController extends Controller
             'notes'        => ['nullable', 'string', 'max:2000'],
             'password'     => ['required', 'string'],
             'guests_data'  => ['required', 'json'],
+            'nationality'  => ['nullable', 'string', 'max:100'],          // 🆕 Analytics
         ]);
 
         if (!Hash::check($request->password, $owner->password)) {
@@ -442,6 +452,12 @@ class CreateReservationController extends Controller
         if ($request->filled('extras_data')) {
             $extrasData = json_decode($request->extras_data, true) ?? [];
         }
+
+        // 🆕 Analytics : préserve la nationalité existante si l'edit view n'a pas (encore) le champ
+        $existingNationality = $reservation->people()
+            ->whereNotNull('nationality')
+            ->value('nationality');
+        $nationality = $request->input('nationality') ?: $existingNationality;
 
         DB::beginTransaction();
         try {
@@ -491,6 +507,7 @@ class CreateReservationController extends Controller
                     'reservation_id' => $reservation->id,
                     'guest_id'       => $guest->id,
                     'display_name'   => trim($guest->first_name . ' ' . $guest->last_name),
+                    'nationality'    => $nationality,                       // 🆕 Analytics
                     'item_type'      => $itemType,
                     'item_id'        => $itemId,
                     'price_tnd'      => $priceTnd,
@@ -553,6 +570,10 @@ class CreateReservationController extends Controller
         }
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // AJAX
+    // ─────────────────────────────────────────────────────────────────────────
+
     public function availableUnits(Request $request)
     {
         $request->validate([
@@ -572,6 +593,10 @@ class CreateReservationController extends Controller
         $success = Hash::check($request->password, $owner->password);
         return response()->json(['success' => $success]);
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // DESTROY
+    // ─────────────────────────────────────────────────────────────────────────
 
     public function destroy(Request $request, int $id)
     {
@@ -605,6 +630,10 @@ class CreateReservationController extends Controller
             return back()->withErrors(['error' => 'Erreur : ' . $e->getMessage()]);
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Helpers privés
+    // ─────────────────────────────────────────────────────────────────────────
 
     private function extractSellRate(ExchangeRate $rate): float
     {

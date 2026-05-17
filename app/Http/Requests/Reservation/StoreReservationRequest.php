@@ -23,6 +23,7 @@ class StoreReservationRequest extends FormRequest
             'notes'        => ['nullable', 'string', 'max:2000'],
             'password'     => ['required', 'string'],
             'guests_data'  => ['required', 'json'],
+            'nationality' => 'nullable|string|max:100',
             // ↓ removed: added_by_user_id — l'utilisateur est détecté
             //   automatiquement côté controller (owner ou user connecté)
         ];

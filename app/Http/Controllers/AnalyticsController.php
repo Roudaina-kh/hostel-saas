@@ -7,27 +7,63 @@ use App\Models\Expense;
 use App\Models\Hostel;
 use App\Models\Payment;
 use App\Models\Reservation;
+use App\Services\Analytics\AnalyticsService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
+/**
+ * Module Analytics — Dashboard BI multi-perspectives
+ *
+ * 3 onglets dans une page unique :
+ *  - Acquisition : source d'origine, nationalité, funnel contact_requests
+ *  - Occupation  : taux d'occupation, lead time, performance par type
+ *  - Finance     : revenue, expenses, profit (logique historique conservée)
+ *
+ * Pattern PFE : Dashboard analytics multi-perspectives + Service Layer
+ */
 class AnalyticsController extends Controller
 {
-    public function index()
+    public function __construct(
+        private AnalyticsService $analyticsService,
+    ) {}
+
+    public function index(Request $request)
     {
         $hostelId = (int) session('hostel_id');
         $hostel   = Hostel::findOrFail($hostelId);
 
-        return view('analytics.index', array_merge(
-            ['hostel' => $hostel],
-            $this->compute($hostelId)
-        ));
+        // Onglet actif au chargement (utile pour partage de lien direct)
+        $activeTab = $request->get('tab', 'acquisition');
+        $activeTab = in_array($activeTab, ['acquisition', 'occupancy', 'finance'], true)
+            ? $activeTab
+            : 'acquisition';
+
+        // Data des 3 onglets — toutes chargées en une fois (toggle = pur JS, pas de reload)
+        $finance     = $this->compute($hostelId);                       // [existing] Finance
+        $acquisition = $this->analyticsService->acquisitionData($hostelId); // [new] Acquisition
+        $occupancy   = $this->analyticsService->occupancyData($hostelId);   // [new] Occupation
+
+return view('analytics.index', array_merge(
+    ['hostel' => $hostel, 'activeTab' => $activeTab],
+    $finance,                          // ← spread finance keys at top level
+    ['finance'     => $finance],
+    ['acquisition' => $acquisition],
+    ['occupancy'   => $occupancy],
+    ['data'        => $acquisition],
+));
     }
 
+    /**
+     * Endpoint JSON — toujours actif, renvoie les data Finance (rétro-compatibilité).
+     */
     public function data()
     {
         return response()->json($this->compute((int) session('hostel_id')));
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═════════════════════════════════════════════════════════════════════════
+    // FINANCE — logique historique conservée à l'identique
+    // ═════════════════════════════════════════════════════════════════════════
 
     private function compute(int $hostelId): array
     {

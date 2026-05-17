@@ -11,6 +11,7 @@ class ReservationPerson extends Model
         'reservation_id',
         'guest_id',
         'display_name',
+        'nationality',
         'item_type',
         'item_id',
         'price_tnd',

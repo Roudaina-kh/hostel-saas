@@ -489,7 +489,7 @@
                 <span class="rv-card-num">1</span>
                 <div>
                     <div class="rv-card-title">Informations réservation</div>
-                    <div class="rv-card-sub">Dates, capacité et source</div>
+                    <div class="rv-card-sub">Dates, capacité, source et nationalité</div>
                 </div>
                 <span class="rv-section-icon">📅</span>
             </div>
@@ -511,8 +511,9 @@
                         <input type="number" name="nights" id="nights" readonly value="1">
                     </div>
                 </div>
-                {{-- Ligne 2 : Personnes + Statut + Source --}}
-                <div class="rv-grid-3 rv-gap">
+
+                {{-- Ligne 2 : Personnes + Statut + Source + Nationalité (Analytics Sprint) --}}
+                <div class="rv-grid-4 rv-gap">
                     <div>
                         <label class="rv-label">Personnes <span class="req">*</span></label>
                         <div class="rv-stepper">
@@ -538,7 +539,40 @@
                             <option value="other">📌 Autre</option>
                         </select>
                     </div>
+                    <div>
+                        <label class="rv-label">Nationalité</label>
+                        <input type="text"
+                               name="nationality"
+                               id="nationality"
+                               list="nationalities-list"
+                               value="{{ old('nationality') }}"
+                               placeholder="Ex : France, Italie…"
+                               autocomplete="off"
+                               maxlength="100">
+                    </div>
                 </div>
+
+                {{-- Datalist nationalités (Analytics Sprint) --}}
+                <datalist id="nationalities-list">
+                    <option value="France"><option value="Allemagne"><option value="États-Unis">
+                    <option value="Italie"><option value="Tunisie"><option value="Algérie">
+                    <option value="Maroc"><option value="Espagne"><option value="Royaume-Uni">
+                    <option value="Belgique"><option value="Pays-Bas"><option value="Suisse">
+                    <option value="Canada"><option value="Australie"><option value="Chine">
+                    <option value="Japon"><option value="Corée du Sud"><option value="Brésil">
+                    <option value="Argentine"><option value="Égypte"><option value="Libye">
+                    <option value="Turquie"><option value="Pologne"><option value="Suède">
+                    <option value="Norvège"><option value="Danemark"><option value="Finlande">
+                    <option value="Irlande"><option value="Portugal"><option value="Grèce">
+                    <option value="Russie"><option value="Inde"><option value="Arabie Saoudite">
+                    <option value="Jordanie"><option value="Iran"><option value="Malaisie">
+                    <option value="Indonésie"><option value="Afrique du Sud"><option value="Mexique">
+                    <option value="Chili"><option value="Nouvelle-Zélande"><option value="Autriche">
+                    <option value="Hongrie"><option value="Roumanie"><option value="Slovaquie">
+                    <option value="Cuba"><option value="Islande"><option value="Lettonie">
+                    <option value="Irak">
+                </datalist>
+
                 {{-- Notes --}}
                 <div>
                     <label class="rv-label">Notes internes</label>
@@ -702,6 +736,7 @@
                 </div>
             </div>
         </div>
+
 
         {{-- ══ 5 — Confirmation ══ --}}
         <div class="rv-card" id="rz-sec-5" style="margin-bottom:0">

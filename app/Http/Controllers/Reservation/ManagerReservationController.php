@@ -105,8 +105,7 @@ class ManagerReservationController extends Controller
             'role' => $roleLabel,
         ];
 
-        
-    $prefix = $this->getRoutePrefix();
+        $prefix = $this->getRoutePrefix();
         $routes = [
             'index'          => $prefix . '.reservations.index',
             'create'         => $prefix . '.reservations.create',
@@ -126,7 +125,7 @@ class ManagerReservationController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 🆕 PLANNING DATA BUILDER (identique à CreateReservationController)
+    // PLANNING DATA BUILDER (identique à CreateReservationController)
     // ─────────────────────────────────────────────────────────────────────────
 
     private function buildPlanningData(Hostel $hostel, Request $request): array
@@ -228,7 +227,6 @@ class ManagerReservationController extends Controller
             'revenue'   => Reservation::where('hostel_id', $hostel->id)->whereNotIn('status', ['cancelled'])->sum('total_price_tnd'),
         ];
 
-        // 🆕 Planning data (remplace $calendarDays)
         $planning = $this->buildPlanningData($hostel, $request);
 
         $canCreate = $role !== 'financial';
@@ -253,7 +251,7 @@ class ManagerReservationController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // STORE
+    // STORE  — nationality ajoutée pour le dashboard Analytics
     // ─────────────────────────────────────────────────────────────────────────
 
     public function store(Request $request)
@@ -273,6 +271,7 @@ class ManagerReservationController extends Controller
             'notes'       => ['nullable', 'string', 'max:2000'],
             'password'    => ['required', 'string'],
             'guests_data' => ['required', 'json'],
+            'nationality' => ['nullable', 'string', 'max:100'],          // 🆕 Analytics
         ]);
 
         if (!Hash::check($request->password, $user->password)) {
@@ -283,6 +282,9 @@ class ManagerReservationController extends Controller
         if (!is_array($guestsData) || count($guestsData) < 1) {
             return back()->withInput()->withErrors(['guests_data' => 'Données guests invalides.']);
         }
+
+        // 🆕 Analytics : récupère la nationalité du groupe (1 champ form → appliqué à tous les guests)
+        $nationality = $request->input('nationality');
 
         DB::beginTransaction();
         try {
@@ -335,6 +337,7 @@ class ManagerReservationController extends Controller
                     'reservation_id' => $reservation->id,
                     'guest_id'       => $guest->id,
                     'display_name'   => trim($guest->first_name . ' ' . $guest->last_name),
+                    'nationality'    => $nationality,                       // 🆕 Analytics
                     'item_type'      => $itemType,
                     'item_id'        => $itemId,
                     'price_tnd'      => $priceTnd,
@@ -359,7 +362,7 @@ class ManagerReservationController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // EDIT
+    // EDIT  — nationality ajoutée au mapping
     // ─────────────────────────────────────────────────────────────────────────
 
     public function edit(int $id)
@@ -378,6 +381,7 @@ class ManagerReservationController extends Controller
                 'phone'         => $guest?->phone         ?? '',
                 'country_id'    => $guest?->country_id    ?? '',
                 'gender'        => $guest?->gender        ?? 'male',
+                'nationality'   => $person->nationality   ?? '',          // 🆕 Analytics
                 'item_type'     => $person->item_type,
                 'item_id'       => $person->item_id,
                 'price_input'   => $person->price_input,
@@ -387,15 +391,21 @@ class ManagerReservationController extends Controller
             ];
         })->values()->toArray();
 
+        // 🆕 Nationalité au niveau réservation (pour pré-remplir le champ unique du form)
+        $existingNationality = $reservation->people()
+            ->whereNotNull('nationality')
+            ->value('nationality');
+
         $data = $this->formData($hostel);
-        $data['reservation']    = $reservation;
-        $data['existingGuests'] = $existingGuests;
+        $data['reservation']         = $reservation;
+        $data['existingGuests']      = $existingGuests;
+        $data['existingNationality'] = $existingNationality;              // 🆕 Analytics
 
         return view('reservations.edit', $data);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // UPDATE
+    // UPDATE  — nationality ajoutée (avec fallback : préserve l'existant si absent du form edit)
     // ─────────────────────────────────────────────────────────────────────────
 
     public function update(Request $request, int $id)
@@ -416,6 +426,7 @@ class ManagerReservationController extends Controller
             'notes'       => ['nullable', 'string', 'max:2000'],
             'password'    => ['required', 'string'],
             'guests_data' => ['required', 'json'],
+            'nationality' => ['nullable', 'string', 'max:100'],          // 🆕 Analytics
         ]);
 
         if (!Hash::check($request->password, $user->password)) {
@@ -426,6 +437,12 @@ class ManagerReservationController extends Controller
         if (!is_array($guestsData) || count($guestsData) < 1) {
             return back()->withInput()->withErrors(['guests_data' => 'Données guests invalides.']);
         }
+
+        // 🆕 Analytics : préserve la nationalité existante si l'edit view n'a pas (encore) le champ
+        $existingNationality = $reservation->people()
+            ->whereNotNull('nationality')
+            ->value('nationality');
+        $nationality = $request->input('nationality') ?: $existingNationality;
 
         DB::beginTransaction();
         try {
@@ -475,6 +492,7 @@ class ManagerReservationController extends Controller
                     'reservation_id' => $reservation->id,
                     'guest_id'       => $guest->id,
                     'display_name'   => trim($guest->first_name . ' ' . $guest->last_name),
+                    'nationality'    => $nationality,                       // 🆕 Analytics
                     'item_type'      => $itemType,
                     'item_id'        => $itemId,
                     'price_tnd'      => $priceTnd,
